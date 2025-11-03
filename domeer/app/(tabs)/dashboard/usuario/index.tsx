@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#145',
   },
   text: {
-    color: 'white',
+    color: '#FFFEE5',
     fontSize: 20,
     fontWeight: 'bold',
   },
@@ -45,8 +45,7 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     marginBottom: 20,
-    borderWidth: 3,
-    borderColor: 'white',
+    backgroundColor: '#FFFEE5',
   },
   botoes: {
     width: '80%',
