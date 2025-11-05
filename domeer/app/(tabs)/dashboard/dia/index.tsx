@@ -11,13 +11,14 @@ moment.locale('pt-br');
 const { width } = Dimensions.get('window');
 const DAY_WIDTH = width / 7;
 const gatodeitado = require('../../../../assets/images/gato-deitado.png'); 
+const calendario = require ('../../../../assets/images/calendario.png');
 
 interface RoundButtonProps {
   iconName: keyof typeof FontAwesome.glyphMap;
   onPress: () => void;
   label: string;
 }
-//Seu dia
+
 interface DayData {
   date: string;
   dayOfWeek: string;
@@ -29,6 +30,8 @@ interface CalendarDayProps {
   isSelected: boolean;
   onSelectDay: (date: string) => void;
 }
+
+
 
 const RoundButton: React.FC<RoundButtonProps> = ({ iconName, onPress, label }) => {
   return (
@@ -133,6 +136,13 @@ export default function Tutorial() {
       >
         <Text style={[styles.text, styles.copseText, styles.headerText]}>Seu dia</Text>
 
+
+        <Image
+          source={calendario} 
+          style={styles.calendario}
+          resizeMode="contain"
+        />
+
         <View style={styles.calendarContainer}>
 
           <FlatList
@@ -191,7 +201,8 @@ const styles = StyleSheet.create({
   imagedeitado: {
     width: '100%',
     height: 170,
-    marginBottom: 20,
+    marginBottom: 90,
+    marginTop: 180,
   },
   
   container: {
@@ -287,5 +298,17 @@ const styles = StyleSheet.create({
   
   headerText: {
     fontSize: 33,
+  },
+
+    calendario: {
+    position: 'absolute',
+    top: 25,
+    right: 20, 
+    width: 80,
+    height: 50,
+    zIndex: 10, 
+    tintColor: '#FFFFFF',
+    
   }
+
 });
