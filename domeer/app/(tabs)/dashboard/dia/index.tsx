@@ -12,17 +12,20 @@ moment.locale('pt-br');
 // Removendo: const DAY_WIDTH = width / 7;
 
 const gatodeitado = require('../../../../assets/images/gato-deitado.png'); 
+const calendario = require ('../../../../assets/images/calendario.png');
 
 interface RoundButtonProps {
+
   iconName: keyof typeof FontAwesome.glyphMap;
   onPress: () => void;
   label: string;
 }
 
-// Removendo interfaces de calendário (DayData, CalendarDayProps)
-// Removendo o componente CalendarDay
-// Removendo abreviações personalizadas (diasSemanaAbreviados)
-// Removendo função generateDates
+interface DayData {
+  date: string;
+  dayOfWeek: string;
+  dayOfMonth: string;
+}
 
 const RoundButton: React.FC<RoundButtonProps> = ({ iconName, onPress, label }) => {
   return (
@@ -41,33 +44,20 @@ const RoundButton: React.FC<RoundButtonProps> = ({ iconName, onPress, label }) =
 };
 
 export default function Tutorial() {
-  // Alterado: selectedDate agora usa apenas a data atual, pois não há seleção manual.
   const selectedDate = moment().format('YYYY-MM-DD'); 
   
-  // Removendo estados de FlatList/Calendário
-  // const allDates = generateDates(100);
-  // const flatListRef = React.useRef<FlatList>(null);
-  // Removendo useEffect para scroll
-
-  // --- ESTADOS PARA O MODAL ---
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalType, setModalType] = useState(''); // Armazena 'Tarefas', 'Metas' ou 'Hábitos'
   const [inputValue, setInputValue] = useState(''); // Estado para o input de informação
   const [habitFrequency, setHabitFrequency] = useState('Diário'); // Estado para frequência de Hábito
-  // ---------------------------
-
-  // Removendo handleDayPress
-
-  // --- FUNÇÃO PARA ABRIR O MODAL ---
+  
   const handleButtonPress = (buttonName: string) => {
     setModalType(buttonName); 
     setIsModalVisible(true); 
     setInputValue(''); // Limpa o input
     setHabitFrequency('Diário'); // Define o padrão para Hábito
   };
-  // --------------------------------------------
-
-  // --- FUNÇÃO PARA SALVAR (INCLUI LÓGICA DE HÁBITO) ---
+  
   const handleSave = () => {
     if (!inputValue.trim()) {
       Alert.alert('Atenção', `O campo de ${modalType} não pode estar vazio.`);
@@ -400,4 +390,51 @@ buttonContainer: {
     color: 'white',
     fontWeight: 'bold',
   },
+
+
+  
+  dayItem: {
+    width: 65,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 5,
+    borderRadius: 10,
+    marginHorizontal: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  selectedDayItem: {
+    backgroundColor: '#FFFEE5',
+  },
+  todayDayItem: {
+    borderWidth: 2,
+    borderColor: '#c04cfd',
+  },
+  dayText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  selectedDayText: {
+    color: '#343434',
+  },
+  dayOfWeekText: {
+    fontSize: 12,
+    textTransform: 'capitalize',
+  },
+  dayOfMonthText: {
+    fontSize: 20,
+  },
+  
+
+    calendario: {
+    position: 'absolute',
+    top: 25,
+    right: 20, 
+    width: 80,
+    height: 50,
+    zIndex: 10, 
+    tintColor: '#FFFFFF',
+    
+  }
+
 });
