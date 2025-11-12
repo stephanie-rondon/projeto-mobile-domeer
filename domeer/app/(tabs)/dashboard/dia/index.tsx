@@ -8,9 +8,6 @@ import { BlurView } from 'expo-blur';
 import 'moment/locale/pt-br';
 moment.locale('pt-br');
 
-// Removendo: const { width } = Dimensions.get('window');
-// Removendo: const DAY_WIDTH = width / 7;
-
 const gatodeitado = require('../../../../assets/images/gato-deitado.png'); 
 const calendario = require ('../../../../assets/images/calendario.png');
 
@@ -38,7 +35,7 @@ const RoundButton: React.FC<RoundButtonProps> = ({ iconName, onPress, label }) =
       >
         <FontAwesome name={iconName} size={20} color="#c04cfd" />
       </TouchableOpacity>
-      <Text style={styles.buttonLabel}>{label}</Text>
+      <Text style={[styles.buttonLabel, styles.copseText]}>{label}</Text>
     </View>
   );
 };
@@ -47,15 +44,15 @@ export default function Tutorial() {
   const selectedDate = moment().format('YYYY-MM-DD'); 
   
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [modalType, setModalType] = useState(''); // Armazena 'Tarefas', 'Metas' ou 'Hábitos'
-  const [inputValue, setInputValue] = useState(''); // Estado para o input de informação
-  const [habitFrequency, setHabitFrequency] = useState('Diário'); // Estado para frequência de Hábito
+  const [modalType, setModalType] = useState(''); 
+  const [inputValue, setInputValue] = useState('');
+  const [habitFrequency, setHabitFrequency] = useState('Diário');
   
   const handleButtonPress = (buttonName: string) => {
     setModalType(buttonName); 
     setIsModalVisible(true); 
-    setInputValue(''); // Limpa o input
-    setHabitFrequency('Diário'); // Define o padrão para Hábito
+    setInputValue(''); 
+    setHabitFrequency('Diário'); 
   };
   
   const handleSave = () => {
@@ -72,13 +69,12 @@ export default function Tutorial() {
 
     Alert.alert(`Nova ${modalType}`, message);
 
-    setIsModalVisible(false); // Fecha o modal
+    setIsModalVisible(false); 
     setModalType(''); 
     setInputValue('');
     setHabitFrequency('Diário');
   };
-  // --------------------------------------------------------
-
+  
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -87,9 +83,6 @@ export default function Tutorial() {
         style={styles.gradient}
       >
         <Text style={[styles.text, styles.copseText, styles.headerText]}>Seu dia</Text>
-
-        {/* REMOVIDO: CalendarContainer e FlatList */}
-        {/* <View style={styles.calendarContainer}>...</View> */}
 
         <Image
          source={gatodeitado} 
@@ -101,12 +94,12 @@ export default function Tutorial() {
           <RoundButton
             iconName="list"
             onPress={() => handleButtonPress('Tarefas')}
-            label="nova Tarefa"
+            label="Nova Tarefa"
           />
           <RoundButton
             iconName="bullseye"
             onPress={() => handleButtonPress('Metas')}
-            label="nova Meta"
+            label="Nova Meta"
           />
           <RoundButton
             iconName="refresh"
@@ -115,8 +108,6 @@ export default function Tutorial() {
           />
         </View>
       </LinearGradient>
-
-      {/* --- O MODAL COM BLUR AQUI --- */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -132,16 +123,14 @@ export default function Tutorial() {
         >
           <View style={styles.modalCenteredView}>
             <View style={styles.modalView}>
-              <Text style={styles.modalTitle}>Nova {modalType}</Text>
-              {/* O Modal ainda mostra a data de HOJE, já que não há mais seleção */}
-              <Text style={styles.modalDateText}>Para o dia: {moment(selectedDate).format('DD/MM/YYYY')}</Text>
+              <Text style={[styles.modalTitle, styles.copseText]}>Nova {modalType}</Text>
+              <Text style={[styles.modalDateText, styles.copseText]}>Para o dia: {moment(selectedDate).format('DD/MM/YYYY')}</Text>
 
-              {/* LÓGICA CONDICIONAL DE INPUT */}
               {modalType === 'Hábitos' ? (
                 <View style={{ width: '100%' }}>
                   <Text style={styles.label}>O que você quer tornar um Hábito?</Text>
                   <TextInput
-                    style={[styles.input, { height: 50, marginBottom: 15 }]} // Estilo ajustado para Hábito
+                    style={[styles.input, { height: 50, marginBottom: 15 }]} 
                     onChangeText={setInputValue}
                     value={inputValue}
                     placeholder="Ex: Beber 2L de água"
@@ -177,7 +166,6 @@ export default function Tutorial() {
                   multiline
                 />
               )}
-              {/* FIM DA LÓGICA CONDICIONAL */}
 
               <View style={styles.modalButtonContainer}>
                 <TouchableOpacity
@@ -193,8 +181,8 @@ export default function Tutorial() {
                   <Text style={styles.textStyle}>Salvar</Text>
                 </TouchableOpacity>
               </View>
-            </View> {/* FECHA modalView */}
-          </View> {/* FECHA modalCenteredView */}
+            </View> 
+          </View> 
         </BlurView>
       </Modal>
 
@@ -206,9 +194,9 @@ const styles = StyleSheet.create({
 
   imagedeitado: {
     width: '100%',
-    height: 250, // Aumentado para ocupar mais espaço
+    height: 250, 
     marginBottom: 20,
-    marginTop: 40, // Adicionado um pouco de espaço superior
+    marginTop: 40, 
   },
   
   container: {
@@ -217,8 +205,8 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
     paddingTop: 25,
-    justifyContent: 'space-between', // Ajustado para distribuir o conteúdo verticalmente
-    paddingBottom: 100, // Espaço para os botões fixos
+    justifyContent: 'space-between', 
+    paddingBottom: 100, 
   },
   text: {
     color: 'white',
@@ -227,10 +215,8 @@ const styles = StyleSheet.create({
     marginBottom: 35,
   },
   copseFont: {
-    // fontFamily: 'Copse',
   },
-  // REMOVIDO: calendarContainer
-  // REMOVIDO: dayItem, selectedDayItem, todayDayItem, dayText, selectedDayText, dayOfWeekText, dayOfMonthText
+  
   
 buttonContainer: {
         flexDirection: 'row',
@@ -242,7 +228,7 @@ buttonContainer: {
         position: 'absolute',
         bottom: 0,
         zIndex: 1,
-        backgroundColor: 'transparent', // <-- MUDANÇA AQUI: Removendo o fundo roxo semi-transparente
+        backgroundColor: 'transparent',
       },
   buttonWrapper: {
     alignItems: 'center',
@@ -277,20 +263,20 @@ buttonContainer: {
     fontSize: 33,
   },
 
-  /* --- Estilos para o Modal --- */
-  absolute: { // Estilo para cobrir 100% da tela para o BlurView
+  
+  absolute: {
     flex: 1,
     width: '100%',
     height: '100%',
-    justifyContent: 'center', // Centraliza o conteúdo (modalView)
-    alignItems: 'center', // Centraliza o conteúdo (modalView)
+    justifyContent: 'center',
+    alignItems: 'center', 
   },
   modalCenteredView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 22,
-    width: '100%', // Adicionado para garantir alinhamento
+    width: '100%', 
   },
   modalView: {
     margin: 20,
@@ -306,7 +292,7 @@ buttonContainer: {
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-    width: '85%', // Largura do modal na tela
+    width: '85%', 
   },
   modalTitle: {
     marginBottom: 15,
@@ -330,7 +316,7 @@ buttonContainer: {
     marginBottom: 20,
     padding: 10,
     fontSize: 16,
-    textAlignVertical: 'top', // Para o texto começar no topo em multiline
+    textAlignVertical: 'top',
     color: '#343434',
   },
   modalButtonContainer: {
@@ -345,10 +331,10 @@ buttonContainer: {
     width: '48%',
   },
   buttonClose: {
-    backgroundColor: 'rgba(94, 43, 255, 1)', // Cor de cancelar (Roxo escuro)
+    backgroundColor: 'rgba(94, 43, 255, 1)', 
   },
   buttonSave: {
-    backgroundColor: '#c04cfd', // Sua cor de destaque
+    backgroundColor: '#c04cfd',
   },
   textStyle: {
     color: 'white',
@@ -356,7 +342,6 @@ buttonContainer: {
     textAlign: 'center',
   },
 
-  /* --- Estilos de Hábito --- */
   label: {
     fontSize: 16,
     fontWeight: '600',
@@ -379,7 +364,7 @@ buttonContainer: {
     backgroundColor: '#f0f0f0',
   },
   frequencyButtonSelected: {
-    backgroundColor: '#c04cfd', // Sua cor de destaque
+    backgroundColor: '#c04cfd', 
     borderColor: '#c04cfd',
   },
   frequencyText: {
