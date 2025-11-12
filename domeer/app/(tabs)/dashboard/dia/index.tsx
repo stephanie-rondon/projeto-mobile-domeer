@@ -4,18 +4,109 @@ import moment from 'moment';
 import React, { useState } from 'react';
 import { Alert, Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View, TextInput } from 'react-native';
 import { BlurView } from 'expo-blur';
+import Carousel from 'react-native-reanimated-carousel'; // Import Corrigido/Mantido
 
 import 'moment/locale/pt-br';
 moment.locale('pt-br');
 
-// Removendo: const { width } = Dimensions.get('window');
-// Removendo: const DAY_WIDTH = width / 7;
-
 const gatodeitado = require('../../../../assets/images/gato-deitado.png'); 
 const calendario = require ('../../../../assets/images/calendario.png');
 
-interface RoundButtonProps {
+// --- Tipos e Função de Geração de Calendário ---
 
+type Day = {
+  date: Date;
+  dayOfMonth: number;
+  dayOfWeek: number; // 0 (Domingo) a 6 (Sábado)
+};
+
+type Month = {
+  name: string;
+  days: Day[];
+};
+
+const generateCalendar = (year: number): Month[] => {
+  const months: Month[] = [];
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
+  for (let m = 0; m < 12; m++) {
+    const days: Day[] = [];
+    const date = new Date(year, m, 1);
+    while (date.getMonth() === m) {
+      days.push({
+        date: new Date(date),
+        dayOfMonth: date.getDate(),
+        dayOfWeek: date.getDay(),
+      });
+      date.setDate(date.getDate() + 1);
+    }
+    months.push({ name: monthNames[m], days });
+  }
+
+  return months;
+};
+
+// Gera os dados do calendário para o ano de 2025
+const months = generateCalendar(2025);
+
+// --- Componente de Renderização do Mês (Agora aceita props para seleção) ---
+
+interface RenderMonthProps {
+  item: Month;
+  selectedDate: string; // Data selecionada no formato YYYY-MM-DD
+  onSelectDate: (date: Date) => void; // Função de callback para selecionar a data
+}
+
+const renderMonth = ({ item, selectedDate, onSelectDate }: RenderMonthProps) => (
+  <View style={styles.monthContainer}>
+    <Text style={styles.monthTitle}>{item.name}</Text>
+    <View style={styles.dayNamesContainer}>
+      {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dayName) => (
+        <Text key={dayName} style={styles.dayNameText}>
+          {dayName}
+        </Text>
+      ))}
+    </View>
+    <View style={styles.monthDaysContainer}>
+      {/* Preenche os dias vazios no início do mês (para alinhar com o domingo) */}
+      {[...Array(item.days[0].dayOfWeek)].map((_, idx) => (
+        <View key={`empty-${idx}`} style={styles.dayEmpty} />
+      ))}
+      
+      {item.days.map((day, idx) => {
+        const dateString = moment(day.date).format('YYYY-MM-DD');
+        const isToday = day.date.toDateString() === new Date().toDateString();
+        const isSelected = dateString === selectedDate;
+
+        return (
+          <TouchableOpacity 
+            key={idx} 
+            style={[
+              styles.dayItem, 
+              isToday && styles.todayDayItem, 
+              isSelected && styles.selectedDayItemCarousel // Novo estilo para o dia selecionado
+            ]}
+            onPress={() => onSelectDate(day.date)} // Adiciona a função de seleção
+          >
+            <Text style={[
+              styles.dayOfMonthTextCarousel,
+              isSelected && styles.selectedDayTextCarousel
+            ]}>
+              {day.dayOfMonth}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  </View>
+);
+
+// --- Componentes RoundButton e Interfaces (Apenas limpeza da duplicação) ---
+
+interface RoundButtonProps {
   iconName: keyof typeof FontAwesome.glyphMap;
   onPress: () => void;
   label: string;
@@ -43,19 +134,26 @@ const RoundButton: React.FC<RoundButtonProps> = ({ iconName, onPress, label }) =
   );
 };
 
+// --- Componente Tutorial (Com o estado de data e a função de seleção) ---
+
 export default function Tutorial() {
-  const selectedDate = moment().format('YYYY-MM-DD'); 
+  // 1. Mudança: selectedDate agora é um estado para que o componente reaja à seleção.
+  const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD')); 
   
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [modalType, setModalType] = useState(''); // Armazena 'Tarefas', 'Metas' ou 'Hábitos'
-  const [inputValue, setInputValue] = useState(''); // Estado para o input de informação
-  const [habitFrequency, setHabitFrequency] = useState('Diário'); // Estado para frequência de Hábito
+  const [modalType, setModalType] = useState(''); 
+  const [inputValue, setInputValue] = useState(''); 
+  const [habitFrequency, setHabitFrequency] = useState('Diário'); 
   
+  const handleSelectDate = (date: Date) => {
+    setSelectedDate(moment(date).format('YYYY-MM-DD'));
+  };
+
   const handleButtonPress = (buttonName: string) => {
     setModalType(buttonName); 
     setIsModalVisible(true); 
-    setInputValue(''); // Limpa o input
-    setHabitFrequency('Diário'); // Define o padrão para Hábito
+    setInputValue(''); 
+    setHabitFrequency('Diário'); 
   };
   
   const handleSave = () => {
@@ -64,7 +162,8 @@ export default function Tutorial() {
       return;
     }
 
-    let message = `Adicionado: "${inputValue}" para o dia ${moment(selectedDate).format('DD/MM')}`;
+    // Usa a selectedDate do estado
+    let message = `Adicionado: "${inputValue}" para o dia ${moment(selectedDate).format('DD/MM/YYYY')}`;
 
     if (modalType === 'Hábitos') {
       message += `\nFrequência: ${habitFrequency}`;
@@ -72,13 +171,12 @@ export default function Tutorial() {
 
     Alert.alert(`Nova ${modalType}`, message);
 
-    setIsModalVisible(false); // Fecha o modal
+    setIsModalVisible(false); 
     setModalType(''); 
     setInputValue('');
     setHabitFrequency('Diário');
   };
-  // --------------------------------------------------------
-
+  
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -86,15 +184,34 @@ export default function Tutorial() {
         locations={[0, 0.6]}
         style={styles.gradient}
       >
-        <Text style={[styles.text, styles.copseText, styles.headerText]}>Seu dia</Text>
+        <Text style={[styles.text, styles.copseText, styles.headerText]}>
+          Dia Selecionado: {moment(selectedDate).format('DD/MM')}
+        </Text>
 
-        {/* REMOVIDO: CalendarContainer e FlatList */}
-        {/* <View style={styles.calendarContainer}>...</View> */}
-
+        {/* --- CAROUSEL RECONFIGURADO COM PROPS --- */}
+        <View style={styles.carouselWrapper}>
+          <Carousel
+            data={months}
+            // Passa a função de seleção e a data atual para o renderItem
+            renderItem={({ item }) => (
+              renderMonth({ item, selectedDate, onSelectDate: handleSelectDate })
+            )}
+            sliderWidth={Dimensions.get('window').width}
+            itemWidth={Dimensions.get('window').width * 0.9} 
+            initialScrollIndex={new Date().getMonth()} 
+            getItemLayout={(data, index) => ({
+                length: Dimensions.get('window').width * 0.9, 
+                offset: (Dimensions.get('window').width * 0.9) * index, 
+                index,
+            })}
+          />
+        </View>
+        {/* ---------------------------------- */}
+        
         <Image
-         source={gatodeitado} 
-         style={styles.imagedeitado}
-         resizeMode="contain"
+          source={gatodeitado} 
+          style={styles.imagedeitado}
+          resizeMode="contain"
         />
 
         <View style={styles.buttonContainer}>
@@ -116,7 +233,7 @@ export default function Tutorial() {
         </View>
       </LinearGradient>
 
-      {/* --- O MODAL COM BLUR AQUI --- */}
+      {/* --- O MODAL FOI ATUALIZADO PARA USAR selectedDate DO ESTADO --- */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -133,15 +250,14 @@ export default function Tutorial() {
           <View style={styles.modalCenteredView}>
             <View style={styles.modalView}>
               <Text style={styles.modalTitle}>Nova {modalType}</Text>
-              {/* O Modal ainda mostra a data de HOJE, já que não há mais seleção */}
+              {/* Agora usa a selectedDate do estado */}
               <Text style={styles.modalDateText}>Para o dia: {moment(selectedDate).format('DD/MM/YYYY')}</Text>
 
-              {/* LÓGICA CONDICIONAL DE INPUT */}
               {modalType === 'Hábitos' ? (
                 <View style={{ width: '100%' }}>
                   <Text style={styles.label}>O que você quer tornar um Hábito?</Text>
                   <TextInput
-                    style={[styles.input, { height: 50, marginBottom: 15 }]} // Estilo ajustado para Hábito
+                    style={[styles.input, { height: 50, marginBottom: 15 }]} 
                     onChangeText={setInputValue}
                     value={inputValue}
                     placeholder="Ex: Beber 2L de água"
@@ -164,7 +280,7 @@ export default function Tutorial() {
                           habitFrequency === freq && styles.frequencyTextSelected,
                         ]}>{freq}</Text>
                       </TouchableOpacity>
-                  ))}
+                    ))}
                   </View>
                 </View>
               ) : (
@@ -177,7 +293,6 @@ export default function Tutorial() {
                   multiline
                 />
               )}
-              {/* FIM DA LÓGICA CONDICIONAL */}
 
               <View style={styles.modalButtonContainer}>
                 <TouchableOpacity
@@ -193,8 +308,8 @@ export default function Tutorial() {
                   <Text style={styles.textStyle}>Salvar</Text>
                 </TouchableOpacity>
               </View>
-            </View> {/* FECHA modalView */}
-          </View> {/* FECHA modalCenteredView */}
+            </View> 
+          </View> 
         </BlurView>
       </Modal>
 
@@ -202,13 +317,15 @@ export default function Tutorial() {
   );
 }
 
+// --- Estilos Atualizados ---
+
 const styles = StyleSheet.create({
 
   imagedeitado: {
     width: '100%',
-    height: 250, // Aumentado para ocupar mais espaço
+    height: 250, 
     marginBottom: 20,
-    marginTop: 40, // Adicionado um pouco de espaço superior
+    marginTop: 40, 
   },
   
   container: {
@@ -217,33 +334,31 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
     paddingTop: 25,
-    justifyContent: 'space-between', // Ajustado para distribuir o conteúdo verticalmente
-    paddingBottom: 100, // Espaço para os botões fixos
+    justifyContent: 'space-between', 
+    paddingBottom: 100, 
   },
   text: {
     color: 'white',
     fontSize: 30,
     textAlign: 'center',
-    marginBottom: 35,
+    marginBottom: 10, 
   },
   copseFont: {
     // fontFamily: 'Copse',
   },
-  // REMOVIDO: calendarContainer
-  // REMOVIDO: dayItem, selectedDayItem, todayDayItem, dayText, selectedDayText, dayOfWeekText, dayOfMonthText
   
-buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        width: '100%',
-        paddingVertical: 20,
-        paddingHorizontal: 20,
-        position: 'absolute',
-        bottom: 0,
-        zIndex: 1,
-        backgroundColor: 'transparent', // <-- MUDANÇA AQUI: Removendo o fundo roxo semi-transparente
-      },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    position: 'absolute',
+    bottom: 0,
+    zIndex: 1,
+    backgroundColor: 'transparent', 
+  },
   buttonWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -278,19 +393,19 @@ buttonContainer: {
   },
 
   /* --- Estilos para o Modal --- */
-  absolute: { // Estilo para cobrir 100% da tela para o BlurView
+  absolute: { 
     flex: 1,
     width: '100%',
     height: '100%',
-    justifyContent: 'center', // Centraliza o conteúdo (modalView)
-    alignItems: 'center', // Centraliza o conteúdo (modalView)
+    justifyContent: 'center', 
+    alignItems: 'center', 
   },
   modalCenteredView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 22,
-    width: '100%', // Adicionado para garantir alinhamento
+    width: '100%', 
   },
   modalView: {
     margin: 20,
@@ -306,7 +421,7 @@ buttonContainer: {
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-    width: '85%', // Largura do modal na tela
+    width: '85%', 
   },
   modalTitle: {
     marginBottom: 15,
@@ -330,7 +445,7 @@ buttonContainer: {
     marginBottom: 20,
     padding: 10,
     fontSize: 16,
-    textAlignVertical: 'top', // Para o texto começar no topo em multiline
+    textAlignVertical: 'top', 
     color: '#343434',
   },
   modalButtonContainer: {
@@ -345,10 +460,10 @@ buttonContainer: {
     width: '48%',
   },
   buttonClose: {
-    backgroundColor: 'rgba(94, 43, 255, 1)', // Cor de cancelar (Roxo escuro)
+    backgroundColor: 'rgba(94, 43, 255, 1)', 
   },
   buttonSave: {
-    backgroundColor: '#c04cfd', // Sua cor de destaque
+    backgroundColor: '#c04cfd', 
   },
   textStyle: {
     color: 'white',
@@ -379,7 +494,7 @@ buttonContainer: {
     backgroundColor: '#f0f0f0',
   },
   frequencyButtonSelected: {
-    backgroundColor: '#c04cfd', // Sua cor de destaque
+    backgroundColor: '#c04cfd', 
     borderColor: '#c04cfd',
   },
   frequencyText: {
@@ -392,41 +507,78 @@ buttonContainer: {
   },
 
 
-  
+  /* --- Estilos do Calendário no Carousel --- */
+  carouselWrapper: {
+    height: 200, 
+    marginBottom: 20,
+  },
+  monthContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    height: '100%',
+    overflow: 'hidden', 
+  },
+  monthTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 10,
+  },
+  dayNamesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 5,
+  },
+  dayNameText: {
+    color: '#FFFEE5',
+    fontWeight: 'bold',
+    width: Dimensions.get('window').width * 0.9 / 7.7, 
+    textAlign: 'center',
+    fontSize: 12,
+  },
+  monthDaysContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    width: '100%',
+  },
   dayItem: {
-    width: 65,
-    height: 60,
+    width: Dimensions.get('window').width * 0.9 / 7.7, 
+    height: 25, 
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 5,
-    borderRadius: 10,
-    marginHorizontal: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    marginVertical: 2,
+    borderRadius: 5,
   },
-  selectedDayItem: {
-    backgroundColor: '#FFFEE5',
+  dayEmpty: {
+    width: Dimensions.get('window').width * 0.9 / 7.7, 
+    height: 25,
+    marginVertical: 2,
+  },
+  dayOfMonthTextCarousel: {
+    fontSize: 14,
+    color: 'white',
+    fontWeight: '600',
   },
   todayDayItem: {
     borderWidth: 2,
-    borderColor: '#c04cfd',
+    borderColor: '#c04cfd', // Borda para o dia de hoje
+    backgroundColor: 'rgba(255, 255, 255, 0.4)', // Fundo um pouco mais claro
   },
-  dayText: {
-    color: 'white',
+  selectedDayItemCarousel: { // NOVO estilo para o dia selecionado
+    backgroundColor: '#c04cfd', 
+    borderWidth: 0,
+  },
+  selectedDayTextCarousel: { // NOVO estilo para o texto do dia selecionado
+    color: '#FFFEE5',
     fontWeight: 'bold',
   },
-  selectedDayText: {
-    color: '#343434',
-  },
-  dayOfWeekText: {
-    fontSize: 12,
-    textTransform: 'capitalize',
-  },
-  dayOfMonthText: {
-    fontSize: 20,
-  },
   
-
-    calendario: {
+  // Estilos antigos (removidos ou adaptados/renomeados)
+  calendario: {
     position: 'absolute',
     top: 25,
     right: 20, 
@@ -434,7 +586,5 @@ buttonContainer: {
     height: 50,
     zIndex: 10, 
     tintColor: '#FFFFFF',
-    
   }
-
 });
