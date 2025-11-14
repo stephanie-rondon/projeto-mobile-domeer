@@ -201,7 +201,7 @@ export default function Tutorial() {
             )}
         />
         </View>
-        {/* ---------------------------------- */}
+
         
         <Image
           source={gatodeitado} 
@@ -228,7 +228,7 @@ export default function Tutorial() {
         </View>
       </LinearGradient>
 
-      {/* --- O MODAL FOI ATUALIZADO PARA USAR selectedDate DO ESTADO --- */}
+  
       <Modal
         animationType="fade"
         transparent={true}
