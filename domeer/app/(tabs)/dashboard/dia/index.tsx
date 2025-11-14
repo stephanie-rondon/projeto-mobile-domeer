@@ -129,7 +129,7 @@ const RoundButton: React.FC<RoundButtonProps> = ({ iconName, onPress, label }) =
       >
         <FontAwesome name={iconName} size={20} color="#c04cfd" />
       </TouchableOpacity>
-      <Text style={styles.buttonLabel}>{label}</Text>
+      <Text style={[styles.buttonLabel, styles.copseText]}>{label}</Text>
     </View>
   );
 };
@@ -196,7 +196,7 @@ export default function Tutorial() {
             renderItem={({ item }) => (
               renderMonth({ item, selectedDate, onSelectDate: handleSelectDate })
             )}
-            sliderWidth={Dimensions.get('window').width}
+            sliderWidth={Dimensions.get('window').width * 0.9}
             itemWidth={Dimensions.get('window').width * 0.9} 
             initialScrollIndex={new Date().getMonth()} 
             getItemLayout={(data, index) => ({
@@ -218,12 +218,12 @@ export default function Tutorial() {
           <RoundButton
             iconName="list"
             onPress={() => handleButtonPress('Tarefas')}
-            label="nova Tarefa"
+            label="Nova Tarefa"
           />
           <RoundButton
             iconName="bullseye"
             onPress={() => handleButtonPress('Metas')}
-            label="nova Meta"
+            label="Nova Meta"
           />
           <RoundButton
             iconName="refresh"
@@ -344,7 +344,6 @@ const styles = StyleSheet.create({
     marginBottom: 10, 
   },
   copseFont: {
-    // fontFamily: 'Copse',
   },
   
   buttonContainer: {
@@ -471,7 +470,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* --- Estilos de Hábito --- */
   label: {
     fontSize: 16,
     fontWeight: '600',
