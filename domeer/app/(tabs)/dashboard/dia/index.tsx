@@ -11,6 +11,8 @@ moment.locale('pt-br');
 
 const gatodeitado = require('../../../../assets/images/gato-deitado.png'); 
 const calendario = require ('../../../../assets/images/calendario.png');
+const carouselWidth = Dimensions.get('window').width * 0.9;
+const initialMonthIndex = new Date().getMonth();
 
 // --- Tipos e Função de Geração de Calendário ---
 
@@ -185,26 +187,19 @@ export default function Tutorial() {
         style={styles.gradient}
       >
         <Text style={[styles.text, styles.copseText, styles.headerText]}>
-          Dia Selecionado: {moment(selectedDate).format('DD/MM')}
+         Meu Dia 
         </Text>
 
-        {/* --- CAROUSEL RECONFIGURADO COM PROPS --- */}
         <View style={styles.carouselWrapper}>
-          <Carousel
+        <Carousel
+            loop={false}
             data={months}
-            // Passa a função de seleção e a data atual para o renderItem
+            width={carouselWidth} 
+            height={200}
             renderItem={({ item }) => (
-              renderMonth({ item, selectedDate, onSelectDate: handleSelectDate })
+             renderMonth({ item, selectedDate, onSelectDate: handleSelectDate })
             )}
-            sliderWidth={Dimensions.get('window').width * 0.9}
-            itemWidth={Dimensions.get('window').width * 0.9} 
-            initialScrollIndex={new Date().getMonth()} 
-            getItemLayout={(data, index) => ({
-                length: Dimensions.get('window').width * 0.9, 
-                offset: (Dimensions.get('window').width * 0.9) * index, 
-                index,
-            })}
-          />
+        />
         </View>
         {/* ---------------------------------- */}
         
