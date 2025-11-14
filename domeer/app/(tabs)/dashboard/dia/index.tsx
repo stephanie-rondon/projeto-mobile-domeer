@@ -187,7 +187,7 @@ export default function Tutorial() {
         style={styles.gradient}
       >
         <Text style={[styles.text, styles.copseText, styles.headerText]}>
-          Dia Selecionado: {moment(selectedDate).format('DD/MM')}
+         Meu Dia 
         </Text>
 
         <View style={styles.carouselWrapper}>
