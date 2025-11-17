@@ -14,13 +14,13 @@ const calendario = require ('../../../../assets/images/calendario.png');
 const carouselWidth = Dimensions.get('window').width * 0.9;
 const initialMonthIndex = new Date().getMonth();
 
-// --- Tipos e Função de Geração de Calendário ---
+
 
 type Day = {
   date: Date;
   dayOfMonth: number;
-  dayOfWeek: number; // 0 (Domingo) a 6 (Sábado)
-  isCurrentMonth: boolean; // Novo campo para identificar se o dia pertence ao mês atual
+  dayOfWeek: number; 
+  isCurrentMonth: boolean; 
 };
 
 type Month = {
@@ -41,11 +41,11 @@ const generateCalendar = (year: number): Month[] => {
     const days: Day[] = [];
     const date = new Date(year, m, 1);
     
-    // Adiciona dias do mês anterior para completar a primeira semana
+    
     const firstDayOfMonth = new Date(year, m, 1);
     const startingDayOfWeek = firstDayOfMonth.getDay();
     
-    // Dias do mês anterior
+    
     const prevMonthLastDay = new Date(year, m, 0).getDate();
     for (let i = startingDayOfWeek - 1; i >= 0; i--) {
       const prevDate = new Date(year, m - 1, prevMonthLastDay - i);
@@ -57,7 +57,7 @@ const generateCalendar = (year: number): Month[] => {
       });
     }
     
-    // Dias do mês atual
+    
     while (date.getMonth() === m) {
       days.push({
         date: new Date(date),
@@ -68,8 +68,8 @@ const generateCalendar = (year: number): Month[] => {
       date.setDate(date.getDate() + 1);
     }
     
-    // Dias do próximo mês para completar a última semana
-    const totalCells = 42; // 6 semanas
+    
+    const totalCells = 42;
     const remainingCells = totalCells - days.length;
     for (let i = 1; i <= remainingCells; i++) {
       const nextDate = new Date(year, m + 1, i);
@@ -92,10 +92,10 @@ const generateCalendar = (year: number): Month[] => {
   return months;
 };
 
-// Gera os dados do calendário para o ano de 2025
+
 const months = generateCalendar(2025);
 
-// --- Componente de Renderização do Mês ---
+
 
 interface RenderMonthProps {
   item: Month;
@@ -121,7 +121,7 @@ const renderMonth = ({ item, index, isActive, onSelectMonth }: RenderMonthProps)
   </TouchableOpacity>
 );
 
-// --- Componente de Renderização da Semana de Dias ---
+
 
 interface RenderWeekProps {
   week: Day[];
@@ -167,7 +167,6 @@ const renderWeek = ({ week, selectedDate, onSelectDate }: RenderWeekProps) => (
   </View>
 );
 
-// --- Componentes RoundButton e Interfaces ---
 
 interface RoundButtonProps {
   iconName: keyof typeof FontAwesome.glyphMap;
@@ -197,7 +196,6 @@ const RoundButton: React.FC<RoundButtonProps> = ({ iconName, onPress, label }) =
   );
 };
 
-// --- Componente Tutorial Atualizado ---
 
 export default function Tutorial() {
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
@@ -210,7 +208,7 @@ export default function Tutorial() {
   const monthCarouselRef = useRef<any>(null);
   const daysCarouselRef = useRef<any>(null);
 
-  // Divide os dias em semanas (7 dias cada)
+  
   const getWeeksForMonth = useCallback((monthIndex: number) => {
     const month = months[monthIndex];
     const weeks: Day[][] = [];
@@ -225,7 +223,7 @@ export default function Tutorial() {
   const handleSelectDate = (date: Date) => {
     setSelectedDate(moment(date).format('YYYY-MM-DD'));
     
-    // Atualiza o mês atual se o dia selecionado for de outro mês
+  
     const selectedMonthIndex = date.getMonth();
     if (selectedMonthIndex !== currentMonthIndex) {
       setCurrentMonthIndex(selectedMonthIndex);
@@ -236,13 +234,13 @@ export default function Tutorial() {
   const handleSelectMonth = (monthIndex: number) => {
     setCurrentMonthIndex(monthIndex);
     
-    // Encontra o primeiro dia do mês selecionado para definir como data selecionada
+    
     const firstDayOfMonth = months[monthIndex].days.find(day => day.isCurrentMonth);
     if (firstDayOfMonth) {
       setSelectedDate(moment(firstDayOfMonth.date).format('YYYY-MM-DD'));
     }
     
-    // Rola o carrossel de dias para o início
+    
     daysCarouselRef.current?.scrollTo({ index: 0, animated: true });
   };
 
@@ -443,7 +441,7 @@ export default function Tutorial() {
   );
 }
 
-// --- Estilos Atualizados ---
+
 
 const styles = StyleSheet.create({
   imagedeitado: {
@@ -516,7 +514,7 @@ const styles = StyleSheet.create({
     fontSize: 33,
   },
 
-  /* --- Novos Estilos para os Carrosseis --- */
+ 
   monthCarouselWrapper: {
     height: 50,
     marginBottom: 10,
