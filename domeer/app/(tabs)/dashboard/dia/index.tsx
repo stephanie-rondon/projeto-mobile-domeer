@@ -1,10 +1,10 @@
 import { FontAwesome } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import moment from 'moment';
-import React, { useState } from 'react';
-import { Alert, Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View, TextInput } from 'react-native';
-import { BlurView } from 'expo-blur';
-import Carousel from 'react-native-reanimated-carousel'; // Import Corrigido/Mantido
+import React, { useCallback, useRef, useState } from 'react';
+import { Alert, Dimensions, Image, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Carousel from 'react-native-reanimated-carousel';
 
 import 'moment/locale/pt-br';
 moment.locale('pt-br');
@@ -20,10 +20,13 @@ type Day = {
   date: Date;
   dayOfMonth: number;
   dayOfWeek: number; // 0 (Domingo) a 6 (Sábado)
+  isCurrentMonth: boolean; // Novo campo para identificar se o dia pertence ao mês atual
 };
 
 type Month = {
   name: string;
+  year: number;
+  monthIndex: number;
   days: Day[];
 };
 
@@ -37,15 +40,53 @@ const generateCalendar = (year: number): Month[] => {
   for (let m = 0; m < 12; m++) {
     const days: Day[] = [];
     const date = new Date(year, m, 1);
+    
+    // Adiciona dias do mês anterior para completar a primeira semana
+    const firstDayOfMonth = new Date(year, m, 1);
+    const startingDayOfWeek = firstDayOfMonth.getDay();
+    
+    // Dias do mês anterior
+    const prevMonthLastDay = new Date(year, m, 0).getDate();
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+      const prevDate = new Date(year, m - 1, prevMonthLastDay - i);
+      days.push({
+        date: prevDate,
+        dayOfMonth: prevDate.getDate(),
+        dayOfWeek: prevDate.getDay(),
+        isCurrentMonth: false
+      });
+    }
+    
+    // Dias do mês atual
     while (date.getMonth() === m) {
       days.push({
         date: new Date(date),
         dayOfMonth: date.getDate(),
         dayOfWeek: date.getDay(),
+        isCurrentMonth: true
       });
       date.setDate(date.getDate() + 1);
     }
-    months.push({ name: monthNames[m], days });
+    
+    // Dias do próximo mês para completar a última semana
+    const totalCells = 42; // 6 semanas
+    const remainingCells = totalCells - days.length;
+    for (let i = 1; i <= remainingCells; i++) {
+      const nextDate = new Date(year, m + 1, i);
+      days.push({
+        date: nextDate,
+        dayOfMonth: nextDate.getDate(),
+        dayOfWeek: nextDate.getDay(),
+        isCurrentMonth: false
+      });
+    }
+
+    months.push({ 
+      name: monthNames[m], 
+      year: year,
+      monthIndex: m,
+      days 
+    });
   }
 
   return months;
@@ -54,59 +95,79 @@ const generateCalendar = (year: number): Month[] => {
 // Gera os dados do calendário para o ano de 2025
 const months = generateCalendar(2025);
 
-// --- Componente de Renderização do Mês (Agora aceita props para seleção) ---
+// --- Componente de Renderização do Mês ---
 
 interface RenderMonthProps {
   item: Month;
-  selectedDate: string; // Data selecionada no formato YYYY-MM-DD
-  onSelectDate: (date: Date) => void; // Função de callback para selecionar a data
+  index: number;
+  isActive: boolean;
+  onSelectMonth: (monthIndex: number) => void;
 }
 
-const renderMonth = ({ item, selectedDate, onSelectDate }: RenderMonthProps) => (
-  <View style={styles.monthContainer}>
-    <Text style={styles.monthTitle}>{item.name}</Text>
-    <View style={styles.dayNamesContainer}>
-      {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dayName) => (
-        <Text key={dayName} style={styles.dayNameText}>
-          {dayName}
-        </Text>
-      ))}
-    </View>
-    <View style={styles.monthDaysContainer}>
-      {/* Preenche os dias vazios no início do mês (para alinhar com o domingo) */}
-      {[...Array(item.days[0].dayOfWeek)].map((_, idx) => (
-        <View key={`empty-${idx}`} style={styles.dayEmpty} />
-      ))}
-      
-      {item.days.map((day, idx) => {
-        const dateString = moment(day.date).format('YYYY-MM-DD');
-        const isToday = day.date.toDateString() === new Date().toDateString();
-        const isSelected = dateString === selectedDate;
+const renderMonth = ({ item, index, isActive, onSelectMonth }: RenderMonthProps) => (
+  <TouchableOpacity 
+    style={[
+      styles.monthItem,
+      isActive && styles.activeMonthItem
+    ]}
+    onPress={() => onSelectMonth(index)}
+  >
+    <Text style={[
+      styles.monthItemText,
+      isActive && styles.activeMonthItemText
+    ]}>
+      {item.name}
+    </Text>
+  </TouchableOpacity>
+);
 
-        return (
-          <TouchableOpacity 
-            key={idx} 
-            style={[
-              styles.dayItem, 
-              isToday && styles.todayDayItem, 
-              isSelected && styles.selectedDayItemCarousel // Novo estilo para o dia selecionado
-            ]}
-            onPress={() => onSelectDate(day.date)} // Adiciona a função de seleção
-          >
-            <Text style={[
-              styles.dayOfMonthTextCarousel,
-              isSelected && styles.selectedDayTextCarousel
-            ]}>
-              {day.dayOfMonth}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+// --- Componente de Renderização da Semana de Dias ---
+
+interface RenderWeekProps {
+  week: Day[];
+  selectedDate: string;
+  onSelectDate: (date: Date) => void;
+}
+
+const renderWeek = ({ week, selectedDate, onSelectDate }: RenderWeekProps) => (
+  <View style={styles.weekContainer}>
+    {week.map((day, dayIndex) => {
+      const dateString = moment(day.date).format('YYYY-MM-DD');
+      const isToday = day.date.toDateString() === new Date().toDateString();
+      const isSelected = dateString === selectedDate;
+
+      return (
+        <TouchableOpacity 
+          key={dayIndex} 
+          style={[
+            styles.dayItem, 
+            !day.isCurrentMonth && styles.otherMonthDay,
+            isToday && styles.todayDayItem, 
+            isSelected && styles.selectedDayItemCarousel
+          ]}
+          onPress={() => onSelectDate(day.date)}
+        >
+          <Text style={[
+            styles.dayOfMonthTextCarousel,
+            !day.isCurrentMonth && styles.otherMonthDayText,
+            isSelected && styles.selectedDayTextCarousel
+          ]}>
+            {day.dayOfMonth}
+          </Text>
+          <Text style={[
+            styles.dayOfWeekText,
+            !day.isCurrentMonth && styles.otherMonthDayText,
+            isSelected && styles.selectedDayTextCarousel
+          ]}>
+            {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'][day.dayOfWeek]}
+          </Text>
+        </TouchableOpacity>
+      );
+    })}
   </View>
 );
 
-// --- Componentes RoundButton e Interfaces (Apenas limpeza da duplicação) ---
+// --- Componentes RoundButton e Interfaces ---
 
 interface RoundButtonProps {
   iconName: keyof typeof FontAwesome.glyphMap;
@@ -136,19 +197,57 @@ const RoundButton: React.FC<RoundButtonProps> = ({ iconName, onPress, label }) =
   );
 };
 
-// --- Componente Tutorial (Com o estado de data e a função de seleção) ---
+// --- Componente Tutorial Atualizado ---
 
 export default function Tutorial() {
-  // 1. Mudança: selectedDate agora é um estado para que o componente reaja à seleção.
-  const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD')); 
-  
+  const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(initialMonthIndex);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalType, setModalType] = useState(''); 
   const [inputValue, setInputValue] = useState(''); 
   const [habitFrequency, setHabitFrequency] = useState('Diário'); 
   
+  const monthCarouselRef = useRef<any>(null);
+  const daysCarouselRef = useRef<any>(null);
+
+  // Divide os dias em semanas (7 dias cada)
+  const getWeeksForMonth = useCallback((monthIndex: number) => {
+    const month = months[monthIndex];
+    const weeks: Day[][] = [];
+    
+    for (let i = 0; i < month.days.length; i += 7) {
+      weeks.push(month.days.slice(i, i + 7));
+    }
+    
+    return weeks;
+  }, []);
+
   const handleSelectDate = (date: Date) => {
     setSelectedDate(moment(date).format('YYYY-MM-DD'));
+    
+    // Atualiza o mês atual se o dia selecionado for de outro mês
+    const selectedMonthIndex = date.getMonth();
+    if (selectedMonthIndex !== currentMonthIndex) {
+      setCurrentMonthIndex(selectedMonthIndex);
+      monthCarouselRef.current?.scrollTo({ index: selectedMonthIndex, animated: true });
+    }
+  };
+
+  const handleSelectMonth = (monthIndex: number) => {
+    setCurrentMonthIndex(monthIndex);
+    
+    // Encontra o primeiro dia do mês selecionado para definir como data selecionada
+    const firstDayOfMonth = months[monthIndex].days.find(day => day.isCurrentMonth);
+    if (firstDayOfMonth) {
+      setSelectedDate(moment(firstDayOfMonth.date).format('YYYY-MM-DD'));
+    }
+    
+    // Rola o carrossel de dias para o início
+    daysCarouselRef.current?.scrollTo({ index: 0, animated: true });
+  };
+
+  const handleMonthCarouselChange = (index: number) => {
+    setCurrentMonthIndex(index);
   };
 
   const handleButtonPress = (buttonName: string) => {
@@ -164,7 +263,6 @@ export default function Tutorial() {
       return;
     }
 
-    // Usa a selectedDate do estado
     let message = `Adicionado: "${inputValue}" para o dia ${moment(selectedDate).format('DD/MM/YYYY')}`;
 
     if (modalType === 'Hábitos') {
@@ -178,7 +276,9 @@ export default function Tutorial() {
     setInputValue('');
     setHabitFrequency('Diário');
   };
-  
+
+  const weeks = getWeeksForMonth(currentMonthIndex);
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -190,18 +290,52 @@ export default function Tutorial() {
          Meu Dia 
         </Text>
 
-        <View style={styles.carouselWrapper}>
-        <Carousel
+        {/* Carrossel de Meses */}
+        <View style={styles.monthCarouselWrapper}>
+          <Carousel
+            ref={monthCarouselRef}
             loop={false}
             data={months}
-            width={carouselWidth} 
-            height={200}
-            renderItem={({ item }) => (
-             renderMonth({ item, selectedDate, onSelectDate: handleSelectDate })
+            width={carouselWidth * 0.3}
+            height={40}
+            defaultIndex={currentMonthIndex}
+            onSnapToItem={handleMonthCarouselChange}
+            renderItem={({ item, index }) => (
+              renderMonth({ 
+                item, 
+                index, 
+                isActive: index === currentMonthIndex,
+                onSelectMonth: handleSelectMonth 
+              })
             )}
-        />
+            style={styles.monthCarousel}
+          />
         </View>
 
+        {/* Carrossel de Dias (Semanas) */}
+        <View style={styles.daysCarouselWrapper}>
+          <Carousel
+            ref={daysCarouselRef}
+            loop={false}
+            data={weeks}
+            width={carouselWidth}
+            height={80}
+            renderItem={({ item }) => (
+              renderWeek({ 
+                week: item, 
+                selectedDate, 
+                onSelectDate: handleSelectDate 
+              })
+            )}
+          />
+        </View>
+
+        {/* Data Selecionada Atual */}
+        <View style={styles.selectedDateContainer}>
+          <Text style={styles.selectedDateText}>
+            {moment(selectedDate).format('DD [de] MMMM [de] YYYY')}
+          </Text>
+        </View>
         
         <Image
           source={gatodeitado} 
@@ -228,7 +362,6 @@ export default function Tutorial() {
         </View>
       </LinearGradient>
 
-  
       <Modal
         animationType="fade"
         transparent={true}
@@ -245,7 +378,6 @@ export default function Tutorial() {
           <View style={styles.modalCenteredView}>
             <View style={styles.modalView}>
               <Text style={styles.modalTitle}>Nova {modalType}</Text>
-              {/* Agora usa a selectedDate do estado */}
               <Text style={styles.modalDateText}>Para o dia: {moment(selectedDate).format('DD/MM/YYYY')}</Text>
 
               {modalType === 'Hábitos' ? (
@@ -307,7 +439,6 @@ export default function Tutorial() {
           </View> 
         </BlurView>
       </Modal>
-
     </View>
   );
 }
@@ -315,7 +446,6 @@ export default function Tutorial() {
 // --- Estilos Atualizados ---
 
 const styles = StyleSheet.create({
-
   imagedeitado: {
     width: '100%',
     height: 250, 
@@ -384,6 +514,94 @@ const styles = StyleSheet.create({
   
   headerText: {
     fontSize: 33,
+  },
+
+  /* --- Novos Estilos para os Carrosseis --- */
+  monthCarouselWrapper: {
+    height: 50,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  monthCarousel: {
+    marginHorizontal: 10,
+  },
+  monthItem: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginHorizontal: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  activeMonthItem: {
+    backgroundColor: '#c04cfd',
+  },
+  monthItemText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  activeMonthItemText: {
+    color: '#FFFEE5',
+    fontWeight: 'bold',
+  },
+
+  daysCarouselWrapper: {
+    height: 100,
+    marginBottom: 10,
+  },
+  weekContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  dayItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+    borderRadius: 10,
+    width: Dimensions.get('window').width * 0.9 / 7.7,
+    marginHorizontal: 2,
+  },
+  otherMonthDay: {
+    opacity: 0.4,
+  },
+  todayDayItem: {
+    borderWidth: 2,
+    borderColor: '#c04cfd',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  selectedDayItemCarousel: {
+    backgroundColor: '#c04cfd', 
+  },
+  dayOfMonthTextCarousel: {
+    fontSize: 16,
+    color: 'white',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  dayOfWeekText: {
+    fontSize: 12,
+    color: 'white',
+    fontWeight: '400',
+  },
+  otherMonthDayText: {
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  selectedDayTextCarousel: {
+    color: '#FFFEE5',
+    fontWeight: 'bold',
+  },
+
+  selectedDateContainer: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  selectedDateText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 
   /* --- Estilos para o Modal --- */
@@ -499,78 +717,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-
-  /* --- Estilos do Calendário no Carousel --- */
-  carouselWrapper: {
-    height: 200, 
-    marginBottom: 20,
-  },
-  monthContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)', 
-    borderRadius: 15,
-    padding: 15,
-    alignItems: 'center',
-    height: '100%',
-    overflow: 'hidden', 
-  },
-  monthTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 10,
-  },
-  dayNamesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginBottom: 5,
-  },
-  dayNameText: {
-    color: '#FFFEE5',
-    fontWeight: 'bold',
-    width: Dimensions.get('window').width * 0.9 / 7.7, 
-    textAlign: 'center',
-    fontSize: 12,
-  },
-  monthDaysContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    width: '100%',
-  },
-  dayItem: {
-    width: Dimensions.get('window').width * 0.9 / 7.7, 
-    height: 25, 
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 2,
-    borderRadius: 5,
-  },
-  dayEmpty: {
-    width: Dimensions.get('window').width * 0.9 / 7.7, 
-    height: 25,
-    marginVertical: 2,
-  },
-  dayOfMonthTextCarousel: {
-    fontSize: 14,
-    color: 'white',
-    fontWeight: '600',
-  },
-  todayDayItem: {
-    borderWidth: 2,
-    borderColor: '#c04cfd', // Borda para o dia de hoje
-    backgroundColor: 'rgba(255, 255, 255, 0.4)', // Fundo um pouco mais claro
-  },
-  selectedDayItemCarousel: { // NOVO estilo para o dia selecionado
-    backgroundColor: '#c04cfd', 
-    borderWidth: 0,
-  },
-  selectedDayTextCarousel: { // NOVO estilo para o texto do dia selecionado
-    color: '#FFFEE5',
-    fontWeight: 'bold',
-  },
-  
-  // Estilos antigos (removidos ou adaptados/renomeados)
+  // Estilos antigos
   calendario: {
     position: 'absolute',
     top: 25,
