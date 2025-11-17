@@ -1,6 +1,6 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { Botao } from '../../../../components/ui/Botao.tsx';
+import { Botao } from '../../../../components/ui/Botao';
+import Circulo from '../../../../components/ui/Circulo';
 
 export default function UserScreen() {
   const nomeUsuario = 'Joao Silva';
@@ -13,18 +13,23 @@ export default function UserScreen() {
   }
 
   return (
-    <LinearGradient
-      colors={['rgba(252, 109, 171, 1)', 'rgba(94, 43, 255, 1)']} //a primeira cor é em cima, e a segunda é embaixo
-      locations={[0.5, 0]} //aqui tu muda o nivel do degrade, se aumentar o primmeiro numero, a primeira cor fica maior, segundo numero, segunda cor..
-      style={styles.container}
-    >
+    <View style={styles.container}>
+      <Circulo
+      style={{
+        bottom:-900,
+        left:-390,
+        right:0,
+        top:undefined,
+      }}
+      />
+      
       <Image source={{ uri: avatarUri }} style={styles.avatar} />
       <Text style={styles.text}>{nomeUsuario}</Text>
       <View style={styles.botoes}>
         <Botao texto="Editar" onPress={handleEditar} />
         <Botao texto="Sair" onPress={handleSair} />
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -33,7 +38,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#145',
+    backgroundColor: '#c04cfd',
   },
   text: {
     color: '#FFFEE5',

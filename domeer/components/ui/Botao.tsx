@@ -17,9 +17,9 @@ export function Botao({ texto, onPress }: BotaoProps) {
 const styles = StyleSheet.create({
   botao: {
     backgroundColor: '#FFFEE5',
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 18,
     marginVertical: 8,
   },
   texto: {
