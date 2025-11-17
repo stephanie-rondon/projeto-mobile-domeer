@@ -2,10 +2,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View, Image, Dimensions } from 'react-native'; 
 import Carousel from 'react-native-reanimated-carousel';
 import moment from 'moment';
+import { CardStyleInterpolators } from '@react-navigation/stack';
 
 const imageGrafico = require('../../../../assets/images/Gato-espiando.png'); 
 
-// --- Tipos e Função de Geração de Calendário ---
 type Day = {
   date: Date;
   dayOfMonth: number;
@@ -42,9 +42,10 @@ const generateCalendar = (year: number): Month[] => {
 };
 
 const months = generateCalendar(2025);
+const windowWidth = Dimensions.get('window').width;
 const carouselWidth = Dimensions.get('window').width * 0.9;
+const carouselContainedWidth = windowWidth * 0.8 - 20;
 
-// --- Renderização do Mês ---
 const renderMonth = ({ item }: { item: Month }) => (
   <View style={styles.monthContainer}>
     <Text style={styles.monthTitle}>{item.name}</Text>
@@ -88,7 +89,6 @@ export default function MesScreen() {
       />
       
       <View style={styles.whiteSquare}>
-        {/* Aqui entra o carrossel */}
         <Carousel
           loop={false}
           data={months}
@@ -126,13 +126,19 @@ const styles = StyleSheet.create({
     marginTop: -40, 
   },
   whiteSquare: {
-    width: '80%', 
-    height: 350, 
+    width: '90%', 
+    height: 300, 
     backgroundColor: '#FFFEE5',
     borderRadius: 15,
     marginTop: -1,
     padding: 10,
-  },
+    alignItems: 'center',
+   },
+   CarouselWrapper:{
+    width: '100%',
+    alignItems: 'center',
+    paddingTop: 10,
+   },
   text: {
     color: 'white',
     fontSize: 20,
@@ -145,18 +151,17 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 33,
   },
-  /* --- Estilos do Calendário --- */
+  
   monthContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)', 
     borderRadius: 15,
-    padding: 15,
+    padding: 10,
     alignItems: 'center',
     height: '100%',
   },
   monthTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#343434',
+    color: 'rgba(194, 76, 253, 1)',
     marginBottom: 10,
   },
   dayNamesContainer: {
@@ -166,9 +171,9 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   dayNameText: {
-    color: '#343434',
+    color: 'rgba(194, 76, 253, 1)',
     fontWeight: 'bold',
-    width: Dimensions.get('window').width * 0.9 / 7.7, 
+    width: Dimensions.get('window').width / 7.2, 
     textAlign: 'center',
     fontSize: 12,
   },
@@ -179,7 +184,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   dayItem: {
-    width: Dimensions.get('window').width * 0.9 / 7.7, 
+    width: Dimensions.get('window').width / 7.2, 
     height: 25, 
     justifyContent: 'center',
     alignItems: 'center',
@@ -187,13 +192,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   dayEmpty: {
-    width: Dimensions.get('window').width * 0.9 / 7.7, 
+    width: Dimensions.get('window').width  / 7.2, 
     height: 25,
     marginVertical: 2,
   },
   dayOfMonthTextCarousel: {
     fontSize: 14,
-    color: '#343434',
+    color: 'rgba(94, 43, 255, 1)',
     fontWeight: '600',
   },
 });
