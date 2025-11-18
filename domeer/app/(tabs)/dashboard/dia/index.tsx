@@ -16,29 +16,35 @@ const initialMonthIndex = new Date().getMonth();
 
 
 
-type Day = {
+type Diacalendario = {
   date: Date;
   dayOfMonth: number;
   dayOfWeek: number; 
   isCurrentMonth: boolean; 
 };
 
-type Month = {
+type Mes = {
   name: string;
   year: number;
   monthIndex: number;
-  days: Day[];
+  days: Diacalendario[];
 };
-
-const generateCalendar = (year: number): Month[] => {
-  const months: Month[] = [];
+interface ItemDiario {
+ id: string;
+   type: 'Tarefas' | 'Metas' | 'Hábitos';
+   date: string;
+   content: string;
+   frequency?: 'Diário' | 'Semanal'; 
+}
+const generateCalendar = (year: number): Mes[] => {
+  const months: Mes[] = [];
   const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
 
   for (let m = 0; m < 12; m++) {
-    const days: Day[] = [];
+    const days: Diacalendario[] = [];
     const date = new Date(year, m, 1);
     
     
@@ -93,18 +99,16 @@ const generateCalendar = (year: number): Month[] => {
 };
 
 
-const months = generateCalendar(2025);
+const meses = generateCalendar(2025);
 
-
-
-interface RenderMonthProps {
-  item: Month;
+interface PropRenderizarMes {
+  item: Mes;
   index: number;
   isActive: boolean;
   onSelectMonth: (monthIndex: number) => void;
 }
 
-const renderMonth = ({ item, index, isActive, onSelectMonth }: RenderMonthProps) => (
+const renderMonth = ({ item, index, isActive, onSelectMonth }: PropRenderizarMes) => (
   <TouchableOpacity 
     style={[
       styles.monthItem,
@@ -123,13 +127,13 @@ const renderMonth = ({ item, index, isActive, onSelectMonth }: RenderMonthProps)
 
 
 
-interface RenderWeekProps {
-  week: Day[];
+interface PropRenderizarSemana {
+  week: Diacalendario[];
   selectedDate: string;
   onSelectDate: (date: Date) => void;
 }
 
-const renderWeek = ({ week, selectedDate, onSelectDate }: RenderWeekProps) => (
+const renderWeek = ({ week, selectedDate, onSelectDate }: PropRenderizarSemana) => (
   <View style={styles.weekContainer}>
     {week.map((day, dayIndex) => {
       const dateString = moment(day.date).format('YYYY-MM-DD');
@@ -168,19 +172,13 @@ const renderWeek = ({ week, selectedDate, onSelectDate }: RenderWeekProps) => (
 );
 
 
-interface RoundButtonProps {
+interface PropbotaoO {
   iconName: keyof typeof FontAwesome.glyphMap;
   onPress: () => void;
   label: string;
 }
 
-interface DayData {
-  date: string;
-  dayOfWeek: string;
-  dayOfMonth: string;
-}
-
-const RoundButton: React.FC<RoundButtonProps> = ({ iconName, onPress, label }) => {
+const RoundButton: React.FC<PropbotaoO> = ({ iconName, onPress, label }) => {
   return (
     <View style={styles.buttonWrapper}>
       <TouchableOpacity
@@ -197,7 +195,7 @@ const RoundButton: React.FC<RoundButtonProps> = ({ iconName, onPress, label }) =
 };
 
 
-export default function Tutorial() {
+export default function Dia() {
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
   const [currentMonthIndex, setCurrentMonthIndex] = useState(initialMonthIndex);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -205,13 +203,15 @@ export default function Tutorial() {
   const [inputValue, setInputValue] = useState(''); 
   const [habitFrequency, setHabitFrequency] = useState('Diário'); 
   
+  const [itensDiarios, setItensDiarios] = useState<ItemDiario[]>([]);
+
   const monthCarouselRef = useRef<any>(null);
   const daysCarouselRef = useRef<any>(null);
 
   
   const getWeeksForMonth = useCallback((monthIndex: number) => {
-    const month = months[monthIndex];
-    const weeks: Day[][] = [];
+    const month = meses[monthIndex];
+    const weeks: Diacalendario[][] = [];
     
     for (let i = 0; i < month.days.length; i += 7) {
       weeks.push(month.days.slice(i, i + 7));
@@ -235,7 +235,7 @@ export default function Tutorial() {
     setCurrentMonthIndex(monthIndex);
     
     
-    const firstDayOfMonth = months[monthIndex].days.find(day => day.isCurrentMonth);
+    const firstDayOfMonth = meses[monthIndex].days.find(day => day.isCurrentMonth);
     if (firstDayOfMonth) {
       setSelectedDate(moment(firstDayOfMonth.date).format('YYYY-MM-DD'));
     }
@@ -248,7 +248,7 @@ export default function Tutorial() {
     setCurrentMonthIndex(index);
   };
 
-  const handleButtonPress = (buttonName: string) => {
+  const handleButtonPress = (buttonName: 'Tarefas' | 'Metas' | 'Hábitos') => {
     setModalType(buttonName); 
     setIsModalVisible(true); 
     setInputValue(''); 
@@ -261,14 +261,17 @@ export default function Tutorial() {
       return;
     }
 
-    let message = `Adicionado: "${inputValue}" para o dia ${moment(selectedDate).format('DD/MM/YYYY')}`;
-
-    if (modalType === 'Hábitos') {
-      message += `\nFrequência: ${habitFrequency}`;
+    const newItem: ItemDiario = {
+      id: Date.now().toString(),
+      type: modalType as 'Tarefas' | 'Metas' | 'Hábitos',
+      content: inputValue,
+      date: selectedDate, 
+    };
+if (modalType === 'Hábitos') {
+      newItem.frequency = habitFrequency as 'Diário' | 'Semanal';
     }
 
-    Alert.alert(`Nova ${modalType}`, message);
-
+    setItensDiarios(prevItems => [...prevItems, newItem]);
     setIsModalVisible(false); 
     setModalType(''); 
     setInputValue('');
@@ -276,6 +279,8 @@ export default function Tutorial() {
   };
 
   const weeks = getWeeksForMonth(currentMonthIndex);
+
+  const itensPraDataCerta = itensDiarios.filter(item => item.date === selectedDate);
 
   return (
     <View style={styles.container}>
@@ -288,12 +293,11 @@ export default function Tutorial() {
          Meu Dia 
         </Text>
 
-        {/* Carrossel de Meses */}
         <View style={styles.monthCarouselWrapper}>
           <Carousel
             ref={monthCarouselRef}
             loop={false}
-            data={months}
+            data={meses}
             width={carouselWidth * 0.3}
             height={40}
             defaultIndex={currentMonthIndex}
@@ -310,7 +314,6 @@ export default function Tutorial() {
           />
         </View>
 
-        {/* Carrossel de Dias (Semanas) */}
         <View style={styles.daysCarouselWrapper}>
           <Carousel
             ref={daysCarouselRef}
@@ -328,13 +331,39 @@ export default function Tutorial() {
           />
         </View>
 
-        {/* Data Selecionada Atual */}
         <View style={styles.selectedDateContainer}>
           <Text style={styles.selectedDateText}>
             {moment(selectedDate).format('DD [de] MMMM [de] YYYY')}
           </Text>
         </View>
-        
+          <View style={styles.dailyItemsContainer}>
+          {itensPraDataCerta.length > 0 ? (
+            itensPraDataCerta.map(item => (
+              <View key={item.id} style={styles.dailyItemCard}>
+                <View style={styles.dailyItemHeader}>
+                  <FontAwesome 
+                    name={
+                      item.type === 'Tarefas' ? 'list' :
+                      item.type === 'Metas' ? 'bullseye' : 
+                      'refresh'
+                    } 
+                    size={16} 
+                    color="#c04cfd" 
+                  />
+                  <Text style={styles.dailyItemTitle}>{item.type}</Text>
+                </View>
+                <Text style={styles.dailyItemContent}>{item.content}</Text>
+                {item.frequency && (
+                  <Text style={styles.dailyItemFrequency}>Frequência: {item.frequency}</Text>
+                )}
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noItemsText}>
+              Nenhum item adicionado para este dia.
+            </Text>
+          )}
+        </View>
         <Image
           source={gatodeitado} 
           style={styles.imagedeitado}
@@ -602,7 +631,56 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  /* --- Estilos para o Modal --- */
+  dailyItemsContainer: {
+        flex: 1, 
+        paddingHorizontal: 20,
+        marginTop: 20,
+        alignItems: 'center',
+        maxHeight: 250,
+    },
+    dailyItemCard: {
+        backgroundColor: '#FFFEE5',
+        width: '100%',
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+        elevation: 3,
+    },
+
+    dailyItemHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 5,
+    },
+    dailyItemTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#c04cfd', 
+        marginLeft: 8,
+        textTransform: 'uppercase',
+    },
+    dailyItemContent: {
+        fontSize: 16,
+        color: '#343434',
+        marginBottom: 5,
+    },
+    dailyItemFrequency: {
+        fontSize: 12,
+        color: '#808080',
+        fontStyle: 'italic',
+    },
+    noItemsText: {
+        color: 'rgba(255, 255, 255, 0.7)',
+        fontSize: 16,
+        textAlign: 'center',
+        marginTop: 20,
+        paddingHorizontal: 30,
+    },
+
   absolute: { 
     flex: 1,
     width: '100%',
