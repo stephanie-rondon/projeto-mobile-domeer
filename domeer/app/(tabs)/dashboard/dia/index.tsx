@@ -298,7 +298,8 @@ if (modalType === 'Hábitos') {
             ref={monthCarouselRef}
             loop={false}
             data={meses}
-            width={carouselWidth * 0.3}
+            width={carouselWidth}
+            itemWidth={carouselWidth / 3}
             height={40}
             defaultIndex={currentMonthIndex}
             onSnapToItem={handleMonthCarouselChange}
@@ -543,21 +544,25 @@ const styles = StyleSheet.create({
     fontSize: 33,
   },
 
- 
+  monthCarouselFullWidth:{
+    width: Dimensions.get('window').width,
+  },
   monthCarouselWrapper: {
     height: 50,
     marginBottom: 10,
     alignItems: 'center',
   },
   monthCarousel: {
-    marginHorizontal: 10,
+
   },
   monthItem: {
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
-    marginHorizontal: 5,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
   },
   activeMonthItem: {
     backgroundColor: '#c04cfd',
@@ -579,17 +584,16 @@ const styles = StyleSheet.create({
   },
   weekContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 10,
   },
   dayItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
     borderRadius: 10,
     width: Dimensions.get('window').width * 0.9 / 7.7,
-    marginHorizontal: 2,
   },
   otherMonthDay: {
     opacity: 0.4,
