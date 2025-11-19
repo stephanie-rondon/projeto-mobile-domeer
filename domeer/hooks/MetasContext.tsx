@@ -8,8 +8,9 @@ export interface ItemDiario {
   type: ItemTipo;
   content: string;
   date: string; 
-  completed?: boolean;
+  completed: boolean;
   frequency?: 'Diário' | 'Semanal';
+  dayOfWeekCreated?: number;
   
   dataCerta?: string;
   imagemUrl?: string;
