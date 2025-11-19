@@ -2,15 +2,16 @@ import { FontAwesome } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import moment from 'moment';
-import React, { useCallback, useRef, useState } from 'react';
-import { Alert, Dimensions, Image, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useRef, useState, useMemo, useEffect } from 'react';
+import { Alert, Dimensions, Image, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 
 import 'moment/locale/pt-br';
 moment.locale('pt-br');
 
+import { useMetas, ItemDiario } from '@/hooks/MetasContext'
+
 const gatodeitado = require('../../../../assets/images/gato-deitado.png'); 
-const calendario = require ('../../../../assets/images/calendario.png');
 const carouselWidth = Dimensions.get('window').width * 0.9;
 const initialMonthIndex = new Date().getMonth();
 
@@ -29,13 +30,7 @@ type Mes = {
   monthIndex: number;
   days: Diacalendario[];
 };
-interface ItemDiario {
- id: string;
-   type: 'Tarefas' | 'Metas' | 'Hábitos';
-   date: string;
-   content: string;
-   frequency?: 'Diário' | 'Semanal'; 
-}
+
 const generateCalendar = (year: number): Mes[] => {
   const months: Mes[] = [];
   const monthNames = [
@@ -45,16 +40,15 @@ const generateCalendar = (year: number): Mes[] => {
 
   for (let m = 0; m < 12; m++) {
     const days: Diacalendario[] = [];
-    const date = new Date(year, m, 1);
     
     
     const firstDayOfMonth = new Date(year, m, 1);
-    const startingDayOfWeek = firstDayOfMonth.getDay();
+    const startingDayOfWeek = firstDayOfMonth.getDay(); 
     
     
     const prevMonthLastDay = new Date(year, m, 0).getDate();
     for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-      const prevDate = new Date(year, m - 1, prevMonthLastDay - i);
+      const prevDate = new Date(year, m, prevMonthLastDay - i);
       days.push({
         date: prevDate,
         dayOfMonth: prevDate.getDate(),
@@ -64,6 +58,7 @@ const generateCalendar = (year: number): Mes[] => {
     }
     
     
+    let date = new Date(year, m, 1);
     while (date.getMonth() === m) {
       days.push({
         date: new Date(date),
@@ -196,22 +191,26 @@ const RoundButton: React.FC<PropbotaoO> = ({ iconName, onPress, label }) => {
 
 
 export default function Dia() {
+  const {itensDiarios, adicionarItem, atualizarItemDiario } = useMetas();
+
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
   const [currentMonthIndex, setCurrentMonthIndex] = useState(initialMonthIndex);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalType, setModalType] = useState(''); 
   const [inputValue, setInputValue] = useState(''); 
   const [habitFrequency, setHabitFrequency] = useState('Diário'); 
-  
-  const [itensDiarios, setItensDiarios] = useState<ItemDiario[]>([]);
 
   const monthCarouselRef = useRef<any>(null);
   const daysCarouselRef = useRef<any>(null);
 
-  
+useEffect(() => {
+    monthCarouselRef.current?.scrollTo({ index: initialMonthIndex, animated: false });
+  }, []);
+
   const getWeeksForMonth = useCallback((monthIndex: number) => {
     const month = meses[monthIndex];
     const weeks: Diacalendario[][] = [];
+    
     
     for (let i = 0; i < month.days.length; i += 7) {
       weeks.push(month.days.slice(i, i + 7));
@@ -246,8 +245,11 @@ export default function Dia() {
 
   const handleMonthCarouselChange = (index: number) => {
     setCurrentMonthIndex(index);
+  const firstDayOfMonth = meses[index].days.find(day => day.isCurrentMonth);
+    if (firstDayOfMonth) {
+      setSelectedDate(moment(firstDayOfMonth.date).format('YYYY-MM-DD'));
+    }
   };
-
   const handleButtonPress = (buttonName: 'Tarefas' | 'Metas' | 'Hábitos') => {
     setModalType(buttonName); 
     setIsModalVisible(true); 
@@ -266,21 +268,64 @@ export default function Dia() {
       type: modalType as 'Tarefas' | 'Metas' | 'Hábitos',
       content: inputValue,
       date: selectedDate, 
+      completed: false, 
     };
-if (modalType === 'Hábitos') {
+
+    if (modalType === 'Hábitos') {
       newItem.frequency = habitFrequency as 'Diário' | 'Semanal';
+    } else if (modalType === 'Metas') {
+      newItem.progresso = 0;
+      newItem.dataCerta = moment().add(1, 'month').format ('YYYY-MM-DD');
     }
 
-    setItensDiarios(prevItems => [...prevItems, newItem]);
-    setIsModalVisible(false); 
-    setModalType(''); 
-    setInputValue('');
+    adicionarItem(newItem);
+    setInputValue ('');
+    setIsModalVisible(false);
+    setModalType('');
     setHabitFrequency('Diário');
   };
 
-  const weeks = getWeeksForMonth(currentMonthIndex);
+  const handleToggleComplete = (item: ItemDiario) => {
+    atualizarItemDiario(item.id, { completed: !item.completed });
+  };
 
-  const itensPraDataCerta = itensDiarios.filter(item => item.date === selectedDate);
+
+  const itensFiltrados = useMemo(() => {
+    return itensDiarios.filter(item => 
+      item.date === selectedDate 
+    );
+  }, [itensDiarios, selectedDate]);
+
+
+  const renderItemCard = (item: ItemDiario) => (
+    <TouchableOpacity 
+      key={item.id} 
+      style={styles.dailyItemCard} 
+      onPress={() => handleToggleComplete(item)}
+    >
+      <View style={styles.dailyItemHeader}>
+        <FontAwesome 
+          name={
+            item.type === 'Tarefas' ? 'list' :
+            item.type === 'Metas' ? 'bullseye' : 
+            'refresh'
+          } 
+          size={16} 
+          color={item.completed ? '#7321e0' : '#c04cfd'} 
+        />
+        <Text style={[styles.dailyItemTitle, item.completed && { color: '#808080' }]}>{item.type}</Text>
+      </View>
+      <Text style={[styles.dailyItemContent, item.completed && styles.itemCompletedText]}>
+        {item.content}
+      </Text>
+      {item.frequency && (
+        <Text style={styles.dailyItemFrequency}>Frequência: {item.frequency}</Text>
+      )}
+    </TouchableOpacity>
+  );
+
+
+  const weeks = getWeeksForMonth(currentMonthIndex);
 
   return (
     <View style={styles.container}>
@@ -290,31 +335,27 @@ if (modalType === 'Hábitos') {
         style={styles.gradient}
       >
         <Text style={[styles.text, styles.copseText, styles.headerText]}>
-         Meu Dia 
+          Meu Dia 
         </Text>
-
         <View style={styles.monthCarouselWrapper}>
           <Carousel
             ref={monthCarouselRef}
             loop={false}
             data={meses}
-            width={carouselWidth}
-            itemWidth={carouselWidth / 3}
-            height={40}
-            defaultIndex={currentMonthIndex}
-            onSnapToItem={handleMonthCarouselChange}
+            width={Dimensions.get('window').width * 0.35} // Ajuste a largura para o tamanho do item do mês
+            height={50}
+            defaultIndex={initialMonthIndex}
+            onProgressChange={(_, index) => handleMonthCarouselChange(Math.round(index))}
             renderItem={({ item, index }) => (
               renderMonth({ 
                 item, 
                 index, 
-                isActive: index === currentMonthIndex,
+                isActive: index === currentMonthIndex, 
                 onSelectMonth: handleSelectMonth 
               })
             )}
-            style={styles.monthCarousel}
           />
         </View>
-
         <View style={styles.daysCarouselWrapper}>
           <Carousel
             ref={daysCarouselRef}
@@ -322,10 +363,15 @@ if (modalType === 'Hábitos') {
             data={weeks}
             width={carouselWidth}
             height={80}
-            renderItem={({ item }) => (
+            modeConfig={{
+              parallaxScrollingScale: 1,
+              parallaxScrollingOffset: 0,
+              parallaxAdjacentItemScale: 1,
+            }}
+            renderItem={({ item, index }) => (
               renderWeek({ 
                 week: item, 
-                selectedDate, 
+                selectedDate,
                 onSelectDate: handleSelectDate 
               })
             )}
@@ -337,34 +383,16 @@ if (modalType === 'Hábitos') {
             {moment(selectedDate).format('DD [de] MMMM [de] YYYY')}
           </Text>
         </View>
-          <View style={styles.dailyItemsContainer}>
-          {itensPraDataCerta.length > 0 ? (
-            itensPraDataCerta.map(item => (
-              <View key={item.id} style={styles.dailyItemCard}>
-                <View style={styles.dailyItemHeader}>
-                  <FontAwesome 
-                    name={
-                      item.type === 'Tarefas' ? 'list' :
-                      item.type === 'Metas' ? 'bullseye' : 
-                      'refresh'
-                    } 
-                    size={16} 
-                    color="#c04cfd" 
-                  />
-                  <Text style={styles.dailyItemTitle}>{item.type}</Text>
-                </View>
-                <Text style={styles.dailyItemContent}>{item.content}</Text>
-                {item.frequency && (
-                  <Text style={styles.dailyItemFrequency}>Frequência: {item.frequency}</Text>
-                )}
-              </View>
-            ))
+          <ScrollView style={styles.dailyItemsScrollView} contentContainerStyle={styles.dailyItemsContentContainer}>
+          {itensFiltrados.length > 0 ? (
+            itensFiltrados.map(item => renderItemCard(item))
           ) : (
             <Text style={styles.noItemsText}>
               Nenhum item adicionado para este dia.
             </Text>
           )}
-        </View>
+          </ScrollView>
+
         <Image
           source={gatodeitado} 
           style={styles.imagedeitado}
@@ -385,7 +413,7 @@ if (modalType === 'Hábitos') {
           <RoundButton
             iconName="refresh"
             onPress={() => handleButtonPress('Hábitos')}
-            label="novo Hábito"
+            label="Novo Hábito"
           />
         </View>
       </LinearGradient>
@@ -474,11 +502,21 @@ if (modalType === 'Hábitos') {
 
 
 const styles = StyleSheet.create({
+  scrollContent:{
+    paddingTop: 10,
+    paddingBottom: 120,
+    alignItems: 'center',
+  },
+  itemCompletedText: {
+    textDecorationLine: 'line-through',
+    color: '#808080',
+    fontStyle: 'italic',
+  },
   imagedeitado: {
     width: '100%',
-    height: 250, 
-    marginBottom: 20,
-    marginTop: 40, 
+    height: 180, 
+    marginBottom: 80,
+    marginTop: 10, 
   },
   
   container: {
@@ -486,9 +524,8 @@ const styles = StyleSheet.create({
   },
   gradient: {
     flex: 1,
-    paddingTop: 25,
-    justifyContent: 'space-between', 
-    paddingBottom: 100, 
+    paddingTop: 50,
+    
   },
   text: {
     color: 'white',
@@ -536,7 +573,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   copseText: {
-    fontFamily: 'Copse', 
+      
     fontWeight: 'normal', 
   },
   
@@ -553,7 +590,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   monthCarousel: {
-
+    paddingHorizontal: 5,
   },
   monthItem: {
     paddingHorizontal: 15,
@@ -581,11 +618,13 @@ const styles = StyleSheet.create({
   daysCarouselWrapper: {
     height: 100,
     marginBottom: 10,
+    alignItems: 'center',
   },
   weekContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: carouselWidth,
   },
   dayItem: {
     alignItems: 'center',
@@ -635,13 +674,24 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
+  dailyItemsScrollView: {
+    flexGrow: 1, 
+    maxHeight: 250, 
+    width: '100%',
+    paddingHorizontal: 20,
+  },
+  dailyItemsContentContainer: {
+    paddingBottom: 20, 
+    alignItems: 'center',
+  },
+
   dailyItemsContainer: {
-        flex: 1, 
-        paddingHorizontal: 20,
-        marginTop: 20,
-        alignItems: 'center',
-        maxHeight: 250,
-    },
+      flex: 1, 
+      paddingHorizontal: 20,
+      marginTop: 20,
+      alignItems: 'center',
+      maxHeight: 250,
+  },
     dailyItemCard: {
         backgroundColor: '#FFFEE5',
         width: '100%',
@@ -729,7 +779,7 @@ const styles = StyleSheet.create({
     color: '#808080',
   },
   input: {
-    height: 100,
+    minHeight: 100,
     borderColor: '#c04cfd',
     borderWidth: 1,
     borderRadius: 10,
@@ -797,7 +847,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Estilos antigos
   calendario: {
     position: 'absolute',
     top: 25,
