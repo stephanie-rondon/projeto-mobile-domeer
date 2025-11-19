@@ -286,6 +286,12 @@ useEffect(() => {
   };
 
   const handleToggleComplete = (item: ItemDiario) => {
+    if (item.type === 'Metas' && item.completed) {
+      Alert.alert (
+        "Meta concluída",
+      );
+      return;
+    }
     atualizarItemDiario(item.id, { completed: !item.completed });
   };
 
@@ -302,6 +308,7 @@ useEffect(() => {
       key={item.id} 
       style={styles.dailyItemCard} 
       onPress={() => handleToggleComplete(item)}
+      disabled={item.type === 'Metas' && item.completed}
     >
       <View style={styles.dailyItemHeader}>
         <FontAwesome 

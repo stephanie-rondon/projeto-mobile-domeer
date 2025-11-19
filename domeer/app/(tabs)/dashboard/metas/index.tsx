@@ -1,20 +1,33 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useMemo } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, Alert } from 'react-native';
+//text
 import { useMetas, ItemDiario } from '@/hooks/MetasContext'; 
-
 
 interface ItemMetaProps {
   item: ItemDiario;
 }
 
 const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
+  const { atualizarItemDiario } = useMetas(); 
   const [isExpanded, setIsExpanded] = useState(false);
   
   const progressoMeta = item.progresso || 0; 
-  const corDestaque = 'rgba(252, 109, 171, 1)'; 
+  const corDestaque = progressoMeta >= 100 ? 'rgba(76, 175, 80, 1)' : 'rgba(252, 109, 171, 1)'; 
+
+  const handleIncreaseProgress = () => {
+    if (progressoMeta >= 100) return;
+    const novoProgresso = Math.min(progressoMeta + 10, 100); 
+    const updates: Partial <ItemDiario> = { progresso: novoProgresso};
+
+    if (novoProgresso === 100) {
+      updates.completed = true;
+      Alert.alert ('Parabéns!', `Meta "${item.content}" concluída!`)
+    }
+
+    atualizarItemDiario(item.id, updates);
+  };
 
   return (
     <View style={styles.containerMeta}>
@@ -24,16 +37,16 @@ const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
         activeOpacity={0.8}
       >
         <View style={styles.trilhaProgresso}>
-            <View style={[
-                styles.preenchimentoProgresso, 
-                { 
-                  backgroundColor: corDestaque, 
-                  width: `${progressoMeta}%`
-                }
-            ]} />
+          <View style={[
+            styles.preenchimentoProgresso, 
+            { 
+              backgroundColor: corDestaque, 
+              width: `${progressoMeta}%`
+            }
+          ]} />
         </View>
         <View style={styles.conteudoCabecalhoMeta}>
-          <Text style={styles.textoCabecalhoMeta}>
+          <Text style={[styles.textoCabecalhoMeta, styles.copseText]}>
             {item.content}
           </Text>
           <FontAwesome 
@@ -46,24 +59,39 @@ const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
       </TouchableOpacity>
 
       {isExpanded && (
-        <>
-          <Text style={styles.rotuloDataMeta}>
-            {item.type === 'Metas' ? `Data Alvo: ${item.dataCerta || 'Não Definida'}` : `Frequência: ${item.frequency}`}
-          </Text>
-          
-          <View style={styles.cardConteudoExpandido}>
+        <View style={styles.cardConteudoExpandido}>
+            
+            <View style={styles.actionContainer}>
+                <TouchableOpacity
+                    style={[
+                        styles.progressButton,
+                        progressoMeta >= 100 && styles.progressButtonCompleted 
+                    ]}
+                    onPress={handleIncreaseProgress}
+                    disabled={progressoMeta >= 100} 
+                >
+                    <Text style={[styles.progressButtonText, styles.copseText]}>
+                        {progressoMeta >= 100 ? 'CONCLUÍDA' : '+10% Progresso'}
+                    </Text>
+                </TouchableOpacity>
+
+                <Text style={[styles.dateText, styles.copseText]}>
+                    Data Alvo: {item.dataCerta || 'Não Definida'}
+                </Text>
+            </View>
+
             <View style={styles.placeholderInput}></View>
             <View style={[styles.placeholderInput, { width: '40%' }]}></View>
             
             <View style={styles.areaImagemPlaceholder}>
-                <Text style={styles.textoPlaceholder}>
+                <Text style={[styles.textoPlaceholder, styles.copseText]}>
                     [Espaço para o Desenho/Imagem]
                 </Text>
             </View>
             
             <View style={[styles.placeholderInput, { width: '30%', height: 15 }]}></View>
-          </View>
-        </>
+            
+        </View>
       )}
     </View>
   );
@@ -72,15 +100,19 @@ const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
 
 export default function Metas() {
     const { itensDiarios } = useMetas();
-    const apenasMetas = itensDiarios.filter(item => item.type === 'Metas');
 
     const metas = useMemo(() => {
-        return itensDiarios.filter(item => item.type === 'Metas');
-    }, [itensDiarios]);
+      return itensDiarios.filter(item => item.type === 'Metas');
+      }, [itensDiarios]);
+    
+    const metasAtivas = useMemo (() => {
+      return metas.filter(item => (item.progresso || 0) < 100);
+    }, [metas]);
+    
+    const metasConcluidas = useMemo (() => {
+      return metas.filter(item => (item.progresso || 0) === 100);
+    }, [metas]);
 
-    const habitos = useMemo(() => {
-        return itensDiarios.filter(item => item.type === 'Hábitos');
-    }, [itensDiarios]);
 
   return (
     <LinearGradient
@@ -88,19 +120,33 @@ export default function Metas() {
       locations={[0, 0.6]}
       style={styles.container}
     >
-      <Text style={[styles.texto, styles.copseText, styles.headerText]}>METAS</Text>
+      <Text style={[styles.texto, styles.copseText, styles.headerText]}>MINHAS METAS</Text>
       <View style={styles.underline}></View>
       
       <ScrollView contentContainerStyle={styles.containerListaMeta}>
-        <Text style={styles.sectionTitle}>Metas ({metas.length})</Text>
-        {metas.length > 0 ? (
-            metas.map(item => (
+        
+        <Text style={[styles.sectionTitle, styles.copseText]}>Metas Ativas ({metasAtivas.length})</Text>
+        
+        {metasAtivas.length > 0 ? (
+            metasAtivas.map(item => (
                 <ItemMeta key={item.id} item={item} />
             ))
         ) : (
-            <Text style={styles.noItemsText}>Nenhuma meta cadastrada.</Text>
+            <Text style={[styles.noItemsText, styles.copseText]}>Nenhuma meta ativa no momento.</Text>
         )}
         
+          {metasConcluidas.length > 0 && (
+            <View style= {styles.concluidasContainer}>
+              <Text style={[styles.concluidasHeader, styles.copseText]}> Metas Concluídas ({metasConcluidas.length})</Text>
+              <View style={styles.concluidasUnderline} />
+
+                {metasConcluidas.map(item => ( 
+                  <ItemMeta key={item.id} item={item} />
+                ))}
+                <Text style={[styles.concluidasInfo, styles.copseText]}>
+                  Parabéns! Você concluiu sua meta! 🎉</Text>         
+            </View>
+          )}
       </ScrollView>
       
     </LinearGradient>
@@ -128,7 +174,7 @@ const styles = StyleSheet.create({
       marginBottom: 20, 
     },
     copseText: {
-      fontFamily: 'Copse', 
+      fontFamily: 'Copse',
       fontWeight: 'normal', 
     },
     headerText: {
@@ -183,22 +229,49 @@ const styles = StyleSheet.create({
       marginLeft: 10,
     },
     
-    rotuloDataMeta: {
-      color: '#FFFEE5',
-      fontSize: 12,
-      alignSelf: 'flex-start',
-      marginLeft: 10, 
-      marginTop: 5,
-      marginBottom: 5,
+    actionContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderBottomLeftRadius: 10,
+        borderBottomRightRadius: 10,
     },
+    progressButton: {
+        backgroundColor: '#c04cfd',
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        borderRadius: 20,
+    },
+    progressButtonCompleted: {
+        backgroundColor: 'green',
+        opacity: 0.8,
+    },
+    progressButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
+    dateText: {
+        fontSize: 14,
+        color: '#FFFEE5',
+        fontWeight: '600',
+    },
+    
     cardConteudoExpandido: {
       width: '100%',
       backgroundColor: '#FFFEE5', 
       borderRadius: 10,
       padding: 20,
-      marginTop: 5,
+      marginTop: -10,
       minHeight: 350, 
       alignItems: 'center',
+      borderTopLeftRadius: 0,
+      borderTopRightRadius: 0,
+      paddingTop: 15, 
     },
     placeholderInput: {
         backgroundColor: 'rgba(252, 109, 171, 0.2)', 
@@ -242,5 +315,33 @@ const styles = StyleSheet.create({
         marginTop: 15,
         marginBottom: 20,
         fontStyle: 'italic',
+    },
+    concluidasContainer: { 
+        width: '100%',
+        marginTop: 30,
+        paddingTop: 15,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.4)',
+        alignItems: 'center',
+    },
+    concluidasHeader: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: 'white',
+        marginBottom: 8,
+        fontFamily: 'Copse',
+    },
+    concluidasUnderline: {
+        height: 2,
+        width: '50%',
+        backgroundColor: '#FFFEE5',
+        marginBottom: 15,
+    },
+    concluidasInfo: {
+        fontSize: 12,
+        color: 'rgba(255, 255, 255, 0.7)',
+        marginTop: 10,
+        fontStyle: 'italic',
+        textAlign: 'center',
     },
 });

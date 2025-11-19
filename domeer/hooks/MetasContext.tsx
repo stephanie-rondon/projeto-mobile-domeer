@@ -39,9 +39,8 @@ export const MetasProvider: React.FC<MetasProviderProps> = ({ children }) => {
    
     const newItem = {
         ...item,
-        progresso: item.type === 'Metas' ? (item.progresso || 0) : undefined,
-        dataCerta: item.type === 'Metas' ? (item.dataCerta || undefined) : undefined,
-        completed: item.type !== 'Metas' ? false : undefined,
+        progresso: item.type === 'Metas' ? (item.progresso ?? 0) : undefined,
+        completed: item.type !== 'Metas' ? (item.completed ?? false) : item.completed,
     };
     setItensDiarios(prev => [...prev, newItem]);
   };
