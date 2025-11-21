@@ -1,9 +1,23 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState, useMemo } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, Alert } from 'react-native';
-//text
-import { useMetas, ItemDiario } from '@/hooks/MetasContext'; 
+import React, { useMemo, useState } from 'react';
+import {
+  Alert,
+  Dimensions,
+  Image,
+  ImageSourcePropType,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+
+// text
+import { ItemDiario, useMetas } from '@/hooks/MetasContext';
+
+// 1. ✅ CORREÇÃO: Variável definida com o nome correto e tipagem TypeScript
+const arranhadorImagem: ImageSourcePropType = require('../../../../assets/images/arranhador.png');
 
 interface ItemMetaProps {
   item: ItemDiario;
@@ -13,17 +27,27 @@ const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
   const { atualizarItemDiario } = useMetas(); 
   const [isExpanded, setIsExpanded] = useState(false);
   
-  const progressoMeta = item.progresso || 0; 
-  const corDestaque = progressoMeta >= 100 ? 'rgba(76, 175, 80, 1)' : 'rgba(252, 109, 171, 1)'; 
+  const progressoMeta = item.progresso || 0;
+  const diasConcluidos = item.diasConcluidos || 0;
+  const duracaoTotal = item.duracaoDias || 30;
+  const progressoPorDia = 100 / duracaoTotal;
+  
+  const corDestaque = progressoMeta >= 100 ? 'rgba(76, 175, 80, 1)' : 'rgba(252, 109, 171, 1)';
 
   const handleIncreaseProgress = () => {
     if (progressoMeta >= 100) return;
-    const novoProgresso = Math.min(progressoMeta + 10, 100); 
-    const updates: Partial <ItemDiario> = { progresso: novoProgresso};
+    
+    const novosDiasConcluidos = diasConcluidos + 1;
+    const novoProgresso = Math.min(novosDiasConcluidos * progressoPorDia, 100);
+    
+    const updates: Partial<ItemDiario> = { 
+      progresso: novoProgresso,
+      diasConcluidos: novosDiasConcluidos
+    };
 
     if (novoProgresso === 100) {
       updates.completed = true;
-      Alert.alert ('Parabéns!', `Meta "${item.content}" concluída!`)
+      Alert.alert('Parabéns!', `Meta "${item.content}" concluída!`);
     }
 
     atualizarItemDiario(item.id, updates);
@@ -49,70 +73,83 @@ const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
           <Text style={[styles.textoCabecalhoMeta, styles.copseText]}>
             {item.content}
           </Text>
-          <FontAwesome 
-            name={isExpanded ? "chevron-up" : "chevron-down"} 
-            size={14} 
-            color="#FFFEE5" 
-            style={styles.iconeDropdown} 
-          />
+          <View style={styles.progressInfo}>
+            <Text style={[styles.progressText, styles.copseText]}>
+              {diasConcluidos}/{duracaoTotal} dias
+            </Text>
+            <FontAwesome 
+              name={isExpanded ? "chevron-up" : "chevron-down"} 
+              size={14} 
+              color="#FFFEE5" 
+              style={styles.iconeDropdown} 
+            />
+          </View>
         </View>
       </TouchableOpacity>
 
       {isExpanded && (
         <View style={styles.cardConteudoExpandido}>
+          <View style={styles.progressDetails}>
+            <Text style={[styles.progressPercentage, styles.copseText]}>
+              {Math.round(progressoMeta)}% concluído
+            </Text>
+            <Text style={[styles.daysProgress, styles.copseText]}>
+              {diasConcluidos} de {duracaoTotal} dias
+            </Text>
+          </View>
             
-            <View style={styles.actionContainer}>
-                <TouchableOpacity
-                    style={[
-                        styles.progressButton,
-                        progressoMeta >= 100 && styles.progressButtonCompleted 
-                    ]}
-                    onPress={handleIncreaseProgress}
-                    disabled={progressoMeta >= 100} 
-                >
-                    <Text style={[styles.progressButtonText, styles.copseText]}>
-                        {progressoMeta >= 100 ? 'CONCLUÍDA' : '+10% Progresso'}
-                    </Text>
-                </TouchableOpacity>
+          <View style={styles.actionContainer}>
+            <TouchableOpacity
+              style={[
+                styles.progressButton,
+                progressoMeta >= 100 && styles.progressButtonCompleted 
+              ]}
+              onPress={handleIncreaseProgress}
+              disabled={progressoMeta >= 100} 
+            >
+              <Text style={[styles.progressButtonText, styles.copseText]}>
+                {progressoMeta >= 100 ? 'CONCLUÍDA' : `+${Math.round(progressoPorDia)}% Progresso`}
+              </Text>
+            </TouchableOpacity>
 
-                <Text style={[styles.dateText, styles.copseText]}>
-                    Data Alvo: {item.dataCerta || 'Não Definida'}
-                </Text>
-            </View>
+            <Text style={[styles.dateText, styles.copseText]}>
+              Data Alvo: {item.dataCerta ? new Date(item.dataCerta).toLocaleDateString('pt-BR') : 'Não Definida'}
+            </Text>
+          </View>
 
-            <View style={styles.placeholderInput}></View>
-            <View style={[styles.placeholderInput, { width: '40%' }]}></View>
-            
-            <View style={styles.areaImagemPlaceholder}>
-                <Text style={[styles.textoPlaceholder, styles.copseText]}>
-                    [Espaço para o Desenho/Imagem]
-                </Text>
-            </View>
-            
-            <View style={[styles.placeholderInput, { width: '30%', height: 15 }]}></View>
-            
+          <View style={styles.placeholderInput}></View>
+          <View style={[styles.placeholderInput, { width: '40%' }]}></View>
+          
+          {/* 2. ✅ USO CORRETO: Referenciando a variável arranhadorImagem */}
+          <View style={styles.areaImagemPlaceholder}>
+              <Image 
+                  source={arranhadorImagem}
+                  style={styles.imagemArranhador}
+              />
+          </View>
+          
+          <View style={[styles.placeholderInput, { width: '30%', height: 15 }]}></View>
+          
         </View>
       )}
     </View>
   );
 };
 
-
 export default function Metas() {
     const { itensDiarios } = useMetas();
 
     const metas = useMemo(() => {
       return itensDiarios.filter(item => item.type === 'Metas');
-      }, [itensDiarios]);
+    }, [itensDiarios]);
     
-    const metasAtivas = useMemo (() => {
+    const metasAtivas = useMemo(() => {
       return metas.filter(item => (item.progresso || 0) < 100);
     }, [metas]);
     
-    const metasConcluidas = useMemo (() => {
+    const metasConcluidas = useMemo(() => {
       return metas.filter(item => (item.progresso || 0) === 100);
     }, [metas]);
-
 
   return (
     <LinearGradient
@@ -135,8 +172,8 @@ export default function Metas() {
             <Text style={[styles.noItemsText, styles.copseText]}>Nenhuma meta ativa no momento.</Text>
         )}
         
-          {metasConcluidas.length > 0 && (
-            <View style= {styles.concluidasContainer}>
+        {metasConcluidas.length > 0 && (
+            <View style={styles.concluidasContainer}>
               <Text style={[styles.concluidasHeader, styles.copseText]}> Metas Concluídas ({metasConcluidas.length})</Text>
               <View style={styles.concluidasUnderline} />
 
@@ -146,7 +183,7 @@ export default function Metas() {
                 <Text style={[styles.concluidasInfo, styles.copseText]}>
                   Parabéns! Você concluiu sua meta! 🎉</Text>         
             </View>
-          )}
+        )}
       </ScrollView>
       
     </LinearGradient>
@@ -229,6 +266,35 @@ const styles = StyleSheet.create({
       marginLeft: 10,
     },
     
+    // Novos estilos para informações de progresso
+    progressInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    progressText: {
+      color: '#FFFEE5',
+      fontSize: 12,
+      marginRight: 10,
+      fontWeight: '600',
+    },
+    progressDetails: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      width: '100%',
+      marginBottom: 15,
+      paddingHorizontal: 5,
+    },
+    progressPercentage: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#c04cfd',
+    },
+    daysProgress: {
+      fontSize: 14,
+      color: '#808080',
+      fontStyle: 'italic',
+    },
+    
     actionContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -280,6 +346,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginBottom: 10,
     },
+    // Este contêiner tem a borda tracejada e define o espaço da imagem
     areaImagemPlaceholder: {
       marginTop: 20,
       width: '100%',
@@ -343,5 +410,11 @@ const styles = StyleSheet.create({
         marginTop: 10,
         fontStyle: 'italic',
         textAlign: 'center',
+    },
+    
+    imagemArranhador: {
+      width: 500, 
+      height: 470, 
+      resizeMode: 'contain',
     },
 });

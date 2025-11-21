@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import moment from 'moment';
+import React, { createContext, ReactNode, useContext, useState } from 'react';
 
 type ItemTipo = 'Tarefas' | 'Metas' | 'Hábitos';
 
@@ -14,7 +13,10 @@ export interface ItemDiario {
   
   dataCerta?: string;
   imagemUrl?: string;
-  progresso?: number; 
+  progresso?: number;
+  // Novas propriedades para metas
+  duracaoDias?: number;
+  diasConcluidos?: number;
 }
 
 interface MetasContextType {
@@ -42,6 +44,8 @@ export const MetasProvider: React.FC<MetasProviderProps> = ({ children }) => {
         ...item,
         progresso: item.type === 'Metas' ? (item.progresso ?? 0) : undefined,
         completed: item.type !== 'Metas' ? (item.completed ?? false) : item.completed,
+        duracaoDias: item.type === 'Metas' ? (item.duracaoDias ?? 30) : undefined,
+        diasConcluidos: item.type === 'Metas' ? (item.diasConcluidos ?? 0) : undefined,
     };
     setItensDiarios(prev => [...prev, newItem]);
   };

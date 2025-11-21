@@ -2,14 +2,14 @@ import { FontAwesome } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import moment from 'moment';
-import React, { useCallback, useRef, useState, useMemo, useEffect } from 'react';
-import { Alert, Dimensions, Image, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 
 import 'moment/locale/pt-br';
 moment.locale('pt-br');
 
-import { useMetas, ItemDiario } from '@/hooks/MetasContext'
+import { ItemDiario, useMetas } from '@/hooks/MetasContext';
 
 const gatodeitado = require('../../../../assets/images/gato-deitado.png'); 
 const carouselWidth = Dimensions.get('window').width * 0.9;
@@ -39,10 +39,8 @@ const generateCalendar = (year: number): Mes[] => {
     for (let m = 0; m < 12; m++) {
         const days: Diacalendario[] = [];
 
-
         const firstDayOfMonth = new Date(year, m, 1);
         const startingDayOfWeek = firstDayOfMonth.getDay(); 
-
 
         const prevMonthLastDay = new Date(year, m, 0).getDate();
         for (let i = startingDayOfWeek - 1; i >= 0; i--) {
@@ -55,7 +53,6 @@ const generateCalendar = (year: number): Mes[] => {
             });
         }
 
-
         let date = new Date(year, m, 1);
         while (date.getMonth() === m) {
             days.push({
@@ -66,7 +63,6 @@ const generateCalendar = (year: number): Mes[] => {
             });
             date.setDate(date.getDate() + 1);
         }
-
 
         const totalCells = 42;
         const remainingCells = totalCells - days.length;
@@ -90,7 +86,6 @@ const generateCalendar = (year: number): Mes[] => {
 
     return months;
 };
-
 
 const meses = generateCalendar(2025);
 
@@ -118,7 +113,6 @@ const renderMonth = ({ item, index, isActive, onSelectMonth }: PropsRenderizarMe
         </Text>
     </TouchableOpacity>
 );
-
 
 interface PropsRenderizarSemana {
     week: Diacalendario[];
@@ -166,7 +160,6 @@ const renderWeek = ({ week, selectedDate, onSelectDate }: PropsRenderizarSemana)
     </View>
 );
 
-
 interface PropsBotaoRedondo {
     iconName: keyof typeof FontAwesome.glyphMap;
     onPress: () => void;
@@ -189,7 +182,6 @@ const RoundButton: React.FC<PropsBotaoRedondo> = ({ iconName, onPress, label }) 
     );
 };
 
-
 export default function Dia() {
     const {itensDiarios, adicionarItem, atualizarItemDiario } = useMetas();
 
@@ -199,6 +191,9 @@ export default function Dia() {
     const [modalType, setModalType] = useState(''); 
     const [inputValue, setInputValue] = useState(''); 
     const [habitFrequency, setHabitFrequency] = useState('Diário'); 
+    // Novos estados para metas
+    const [selectedDuration, setSelectedDuration] = useState(30); // padrão 30 dias
+    const [targetDate, setTargetDate] = useState('');
 
     const monthCarouselRef = useRef<any>(null);
     const daysCarouselRef = useRef<any>(null);
@@ -211,7 +206,6 @@ export default function Dia() {
         const month = meses[monthIndex];
         const weeks: Diacalendario[][] = [];
 
-
         for (let i = 0; i < month.days.length; i += 7) {
             weeks.push(month.days.slice(i, i + 7));
         }
@@ -221,7 +215,6 @@ export default function Dia() {
 
     const handleSelectDate = (date: Date) => {
         setSelectedDate(moment(date).format('YYYY-MM-DD'));
-
 
         const selectedMonthIndex = date.getMonth();
         if (selectedMonthIndex !== currentMonthIndex) {
@@ -233,12 +226,10 @@ export default function Dia() {
     const handleSelectMonth = (monthIndex: number) => {
         setCurrentMonthIndex(monthIndex);
 
-
         const firstDayOfMonth = meses[monthIndex].days.find(day => day.isCurrentMonth);
         if (firstDayOfMonth) {
             setSelectedDate(moment(firstDayOfMonth.date).format('YYYY-MM-DD'));
         }
-
 
         daysCarouselRef.current?.scrollTo({ index: 0, animated: true });
     };
@@ -256,6 +247,8 @@ export default function Dia() {
         setIsModalVisible(true); 
         setInputValue(''); 
         setHabitFrequency('Diário'); 
+        setSelectedDuration(30); // Reset para padrão
+        setTargetDate(''); // Reset data alvo
     };
 
     const handleSave = () => {
@@ -275,24 +268,27 @@ export default function Dia() {
         if (modalType === 'Hábitos') {
             newItem.frequency = habitFrequency as 'Diário' | 'Semanal';
             if (habitFrequency === 'Semanal') {
-                // Aqui estamos usando moment(selectedDate).day() que retorna o dia da semana (0 a 6)
                 newItem.dayOfWeekCreated = moment(selectedDate).day(); 
             }
         } else if (modalType === 'Metas') {
             newItem.progresso = 0;
-            newItem.dataCerta = moment().add(1, 'month').format ('YYYY-MM-DD');
+            newItem.dataCerta = targetDate || moment().add(selectedDuration, 'days').format('YYYY-MM-DD');
+            newItem.duracaoDias = selectedDuration;
+            newItem.diasConcluidos = 0;
         }
 
         adicionarItem(newItem);
-        setInputValue ('');
+        setInputValue('');
         setIsModalVisible(false);
         setModalType('');
         setHabitFrequency('Diário');
+        setSelectedDuration(30);
+        setTargetDate('');
     };
 
     const handleToggleComplete = (item: ItemDiario) => {
         if (item.type === 'Metas' && item.completed) {
-            Alert.alert (
+            Alert.alert(
                 "Meta concluída",
                 "Você já marcou essa meta como concluída!"
             );
@@ -302,14 +298,12 @@ export default function Dia() {
         atualizarItemDiario(item.id, { completed: !item.completed });
     };
 
-
     const itensFiltrados = useMemo(() => {
-        // Pega o dia da semana da data que o usuário está olhando (0=Dom, 6=Sáb)
+        
         const selectedDayOfWeek = moment(selectedDate).day(); 
 
         return itensDiarios.filter(item => {
             if (item.type === 'Tarefas' || item.type === 'Metas') {
-                // Tarefas e Metas: Aparecem APENAS no dia em que foram criadas/agendadas
                 return item.date === selectedDate; 
             }
 
@@ -328,7 +322,6 @@ export default function Dia() {
             return false;
         });
     }, [itensDiarios, selectedDate]);
-
 
     const renderItemCard = (item: ItemDiario) => (
         <TouchableOpacity 
@@ -355,9 +348,13 @@ export default function Dia() {
             {item.frequency && (
                 <Text style={[styles.dailyItemFrequency, styles.copseText]}>Frequência: {item.frequency}</Text>
             )}
+            {item.type === 'Metas' && item.duracaoDias && (
+                <Text style={[styles.dailyItemFrequency, styles.copseText]}>
+                    Duração: {item.duracaoDias} dias | Progresso: {item.progresso || 0}%
+                </Text>
+            )}
         </TouchableOpacity>
     );
-
 
     const weeks = getWeeksForMonth(currentMonthIndex);
 
@@ -501,6 +498,48 @@ export default function Dia() {
                                         ))}
                                     </View>
                                 </View>
+                            ) : modalType === 'Metas' ? (
+                                <View style={{ width: '100%' }}>
+                                    <Text style={[styles.label, styles.copseText]}>O que você quer alcançar?</Text>
+                                    <TextInput
+                                        style={[styles.input, { height: 50, marginBottom: 15, fontFamily: 'Copse' }]}
+                                        onChangeText={setInputValue}
+                                        value={inputValue}
+                                        placeholder="Ex: Ler 5 livros"
+                                        placeholderTextColor="#808080"
+                                    />
+
+                                    <Text style={[styles.label, styles.copseText]}>Duração da Meta (dias):</Text>
+                                    <View style={styles.durationContainer}>
+                                        {[7, 15, 30, 60, 90].map((days) => (
+                                            <TouchableOpacity
+                                                key={days}
+                                                style={[
+                                                    styles.durationButton,
+                                                    selectedDuration === days && styles.durationButtonSelected,
+                                                ]}
+                                                onPress={() => setSelectedDuration(days)}
+                                            >
+                                                <Text style={[
+                                                    styles.durationText,
+                                                    styles.copseText,
+                                                    selectedDuration === days && styles.durationTextSelected,
+                                                ]}>
+                                                    {days} dias
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+
+                                    <Text style={[styles.label, styles.copseText]}>Data alvo (opcional):</Text>
+                                    <TextInput
+                                        style={[styles.input, { height: 40, marginBottom: 15, fontFamily: 'Copse' }]}
+                                        onChangeText={setTargetDate}
+                                        value={targetDate}
+                                        placeholder="DD/MM/AAAA"
+                                        placeholderTextColor="#808080"
+                                    />
+                                </View>
                             ) : (
                                 <TextInput
                                     style={[styles.input, { fontFamily: 'Copse' }]}
@@ -533,8 +572,6 @@ export default function Dia() {
         </View>
     );
 }
-
-
 
 const styles = StyleSheet.create({
     scrollContent:{
@@ -878,6 +915,39 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     frequencyTextSelected: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+
+    // Novos estilos para duração de metas
+    durationContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: 20,
+    },
+    durationButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        backgroundColor: '#f0f0f0',
+        width: '48%',
+        marginBottom: 8,
+    },
+    durationButtonSelected: {
+        backgroundColor: '#c04cfd',
+        borderColor: '#c04cfd',
+    },
+    durationText: {
+        color: '#343434',
+        fontWeight: '500',
+        textAlign: 'center',
+        fontSize: 14,
+    },
+    durationTextSelected: {
         color: 'white',
         fontWeight: 'bold',
     },
