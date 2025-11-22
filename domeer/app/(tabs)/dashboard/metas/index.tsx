@@ -1,6 +1,6 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Dimensions,
@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -26,6 +27,8 @@ interface ItemMetaProps {
 const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
   const { atualizarItemDiario } = useMetas(); 
   const [isExpanded, setIsExpanded] = useState(false);
+  const [recompensa, setRecompensa] = useState(item.recompensa || '');
+  const [mostrarInputRecompensa, setMostrarInputRecompensa] = useState(!item.recompensa);
   
   const progressoMeta = item.progresso || 0;
   const diasConcluidos = item.diasConcluidos || 0;
@@ -33,6 +36,12 @@ const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
   const progressoPorDia = 100 / duracaoTotal;
   
   const corDestaque = progressoMeta >= 100 ? 'rgba(76, 175, 80, 1)' : 'rgba(252, 109, 171, 1)';
+
+  // ✅ CORREÇÃO: Atualizar o estado quando a recompensa mudar no contexto
+  useEffect(() => {
+    setRecompensa(item.recompensa || '');
+    setMostrarInputRecompensa(!item.recompensa);
+  }, [item.recompensa]);
 
   const handleIncreaseProgress = () => {
     if (progressoMeta >= 100) return;
@@ -51,6 +60,17 @@ const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
     }
 
     atualizarItemDiario(item.id, updates);
+  };
+
+  const handleSaveRecompensa = () => {
+    if (recompensa.trim()) {
+      atualizarItemDiario(item.id, { recompensa });
+      setMostrarInputRecompensa(false);
+    }
+  };
+
+  const handleEditRecompensa = () => {
+    setMostrarInputRecompensa(true);
   };
 
   return (
@@ -117,8 +137,60 @@ const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
             </Text>
           </View>
 
-          <View style={styles.placeholderInput}></View>
-          <View style={[styles.placeholderInput, { width: '40%' }]}></View>
+          {/* ÁREA DE RECOMPENSA ADICIONADA */}
+          <View style={styles.recompensaContainer}>
+            <Text style={[styles.recompensaTitle, styles.copseText]}>
+              Minha Recompensa 🎁
+            </Text>
+            
+            {mostrarInputRecompensa ? (
+              // MOSTRAR INPUT QUANDO NÃO HÁ RECOMPENSA OU QUANDO ESTÁ EDITANDO
+              <>
+                <TextInput
+                  style={[styles.recompensaInput, styles.copseText]}
+                  value={recompensa}
+                  onChangeText={setRecompensa}
+                  placeholder="O que você ganhará quando concluir esta meta?"
+                  placeholderTextColor="#808080"
+                  multiline
+                  numberOfLines={3}
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.saveRecompensaButton,
+                    !recompensa.trim() && styles.saveRecompensaButtonDisabled
+                  ]}
+                  onPress={handleSaveRecompensa}
+                  disabled={!recompensa.trim()}
+                >
+                  <Text style={[styles.saveRecompensaText, styles.copseText]}>
+                    Salvar Recompensa
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              // MOSTRAR RECOMPENSA SALVA E BOTÃO DE EDITAR
+              <View style={styles.recompensaSalvaContainer}>
+                <View style={styles.recompensaAtualContainer}>
+                  <Text style={[styles.recompensaAtualLabel, styles.copseText]}>
+                    Sua recompensa:
+                  </Text>
+                  <Text style={[styles.recompensaAtualText, styles.copseText]}>
+                    "{item.recompensa}"
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.editRecompensaButton}
+                  onPress={handleEditRecompensa}
+                >
+                  <FontAwesome name="edit" size={16} color="#c04cfd" />
+                  <Text style={[styles.editRecompensaText, styles.copseText]}>
+                    Editar
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
           
           {/* 2. ✅ USO CORRETO: Referenciando a variável arranhadorImagem */}
           <View style={styles.areaImagemPlaceholder}>
@@ -127,8 +199,6 @@ const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
                   style={styles.imagemArranhador}
               />
           </View>
-          
-          <View style={[styles.placeholderInput, { width: '30%', height: 15 }]}></View>
           
         </View>
       )}
@@ -339,13 +409,89 @@ const styles = StyleSheet.create({
       borderTopRightRadius: 0,
       paddingTop: 15, 
     },
-    placeholderInput: {
-        backgroundColor: 'rgba(252, 109, 171, 0.2)', 
-        height: 40,
-        width: '100%',
-        borderRadius: 8,
-        marginBottom: 10,
+    
+    // NOVOS ESTILOS PARA RECOMPENSA
+    recompensaContainer: {
+      width: '100%',
+      marginBottom: 15,
     },
+    recompensaTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#c04cfd',
+      marginBottom: 10,
+      textAlign: 'center',
+    },
+    recompensaInput: {
+      backgroundColor: 'rgba(252, 109, 171, 0.1)',
+      borderWidth: 1,
+      borderColor: 'rgba(252, 109, 171, 0.3)',
+      borderRadius: 10,
+      padding: 12,
+      fontSize: 14,
+      color: '#343434',
+      minHeight: 80,
+      textAlignVertical: 'top',
+      marginBottom: 10,
+    },
+    saveRecompensaButton: {
+      backgroundColor: '#c04cfd',
+      paddingVertical: 10,
+      paddingHorizontal: 15,
+      borderRadius: 20,
+      alignSelf: 'center',
+      marginBottom: 15,
+    },
+    saveRecompensaButtonDisabled: {
+      backgroundColor: '#cccccc',
+      opacity: 0.6,
+    },
+    saveRecompensaText: {
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: 14,
+    },
+    recompensaSalvaContainer: {
+      width: '100%',
+    },
+    recompensaAtualContainer: {
+      backgroundColor: 'rgba(76, 175, 80, 0.1)',
+      padding: 12,
+      borderRadius: 10,
+      borderLeftWidth: 4,
+      borderLeftColor: 'rgba(76, 175, 80, 0.5)',
+      marginBottom: 10,
+    },
+    recompensaAtualLabel: {
+      fontSize: 12,
+      color: '#666',
+      marginBottom: 5,
+      fontStyle: 'italic',
+    },
+    recompensaAtualText: {
+      fontSize: 14,
+      color: '#343434',
+      fontWeight: '500',
+    },
+    editRecompensaButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 15,
+      borderRadius: 15,
+      borderWidth: 1,
+      borderColor: '#c04cfd',
+      backgroundColor: 'transparent',
+    },
+    editRecompensaText: {
+      color: '#c04cfd',
+      fontWeight: 'bold',
+      fontSize: 12,
+      marginLeft: 5,
+    },
+    
     // Este contêiner tem a borda tracejada e define o espaço da imagem
     areaImagemPlaceholder: {
       marginTop: 20,
