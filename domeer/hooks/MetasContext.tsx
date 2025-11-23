@@ -14,16 +14,14 @@ export interface ItemDiario {
   dataCerta?: string;
   imagemUrl?: string;
   progresso?: number;
-  // Novas propriedades para metas
   duracaoDias?: number;
   diasConcluidos?: number;
-  // Nova propriedade para recompensa
   recompensa?: string;
 }
 
 interface MetasContextType {
   itensDiarios: ItemDiario[];
-  adicionarItem: (item: ItemDiario) => void;
+  adicionarItem: (item: Omit<ItemDiario, 'id'>) => void; 
   atualizarItemDiario: (itemId: string, updates: Partial<ItemDiario>) => void; 
 }
 
@@ -36,15 +34,19 @@ interface MetasProviderProps {
 export const MetasProvider: React.FC<MetasProviderProps> = ({ children }) => {
   const [itensDiarios, setItensDiarios] = useState<ItemDiario[]>([]);
   
-  const adicionarItem = (item: ItemDiario) => {
-    const newItem = {
-        ...item,
-        progresso: item.type === 'Metas' ? (item.progresso ?? 0) : undefined,
-        completed: item.type !== 'Metas' ? (item.completed ?? false) : item.completed,
-        duracaoDias: item.type === 'Metas' ? (item.duracaoDias ?? 30) : undefined,
-        diasConcluidos: item.type === 'Metas' ? (item.diasConcluidos ?? 0) : undefined,
-        recompensa: item.type === 'Metas' ? (item.recompensa ?? '') : undefined,
+  const adicionarItem = (item: Omit<ItemDiario, 'id'>) => {
+    const newId = Date.now().toString(); 
+
+    const newItem: ItemDiario = {
+      id: newId,
+      ...item,
+      progresso: item.type === 'Metas' ? (item.progresso ?? 0) : item.progresso,
+      completed: item.type !== 'Metas' ? (item.completed ?? false) : (item.completed ?? false),
+      duracaoDias: item.type === 'Metas' ? (item.duracaoDias ?? 30) : item.duracaoDias,
+      diasConcluidos: item.type === 'Metas' ? (item.diasConcluidos ?? 0) : item.diasConcluidos,
+      recompensa: item.type === 'Metas' ? (item.recompensa ?? '') : item.recompensa,
     };
+    
     setItensDiarios(prev => [...prev, newItem]);
   };
   

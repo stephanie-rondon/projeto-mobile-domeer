@@ -67,6 +67,7 @@ const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
 
     if (novoProgresso === 100) {
       updates.completed = true;
+      updates.recompensa = item.recompensa;
       Alert.alert('Parabéns!', `Meta "${item.content}" concluída!`);
     }
 
