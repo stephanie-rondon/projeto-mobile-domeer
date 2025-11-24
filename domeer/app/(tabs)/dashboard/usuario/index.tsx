@@ -26,7 +26,6 @@ export default function UserScreen() {
       <Image source={{ uri: avatarUri }} style={styles.avatar} />
       <Text style={styles.text}>{nomeUsuario}</Text>
       <View style={styles.botoes}>
-        <Botao texto="Editar" onPress={handleEditar} />
         <Botao texto="Sair" onPress={handleSair} />
       </View>
     </View>

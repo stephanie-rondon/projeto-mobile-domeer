@@ -1,7 +1,14 @@
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Formik } from 'formik';
 import { Pressable, StyleSheet, Text, TextInput } from "react-native";
 import * as Yup from 'yup';
+
+type RootStackParamList = {
+    Usuario: { nomeUsuario: string }; 
+    Login: undefined; 
+};
 
 //validação com Yup
 const validationSchema = Yup.object().shape({
@@ -17,10 +24,28 @@ type LoginFormValues = {
 };
 
 export default function LoginScreen() {
-  const handleLogin = (values: LoginFormValues) =>{
-    console.log("Name:", values.name);
-    console.log("Password:", values.password);
-  };
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
+  const handleLogin = async (values: LoginFormValues) =>{
+    const SERVER_URL = 'http://localhost:3001'; 
+    
+    try {
+        const res = await fetch(`${SERVER_URL}/users?username=${values.name}&password=${values.password}`);
+        const users = await res.json();
+        
+        if (users.length > 0) {
+            const user = users[0];
+            alert(`Bem-vindo, ${user.username}!`);
+            
+            navigation.navigate('Usuario', { nomeUsuario: user.username }); 
+        } else {
+            alert('Nome de usuário ou senha incorretos.');
+        }
+    } catch (error) {
+        console.error('Erro de comunicação:', error);
+        alert('Erro de conexão com o servidor. Verifique se o JSON Server está ativo em localhost:3001.');
+    }
+  };
 
   return (
     <LinearGradient
