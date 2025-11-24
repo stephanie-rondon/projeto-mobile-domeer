@@ -191,8 +191,7 @@ export default function Dia() {
     const [modalType, setModalType] = useState(''); 
     const [inputValue, setInputValue] = useState(''); 
     const [habitFrequency, setHabitFrequency] = useState('Diário'); 
-    // Novos estados para metas
-    const [selectedDuration, setSelectedDuration] = useState(30); // padrão 30 dias
+    const [selectedDuration, setSelectedDuration] = useState(30); 
     const [targetDate, setTargetDate] = useState('');
 
     const monthCarouselRef = useRef<any>(null);
@@ -247,8 +246,8 @@ export default function Dia() {
         setIsModalVisible(true); 
         setInputValue(''); 
         setHabitFrequency('Diário'); 
-        setSelectedDuration(30); // Reset para padrão
-        setTargetDate(''); // Reset data alvo
+        setSelectedDuration(30); 
+        setTargetDate(''); 
     };
 
     const handleSave = () => {
@@ -309,13 +308,11 @@ export default function Dia() {
 
             if (item.type === 'Hábitos') {
                 if (item.frequency === 'Diário') {
-                    // Hábitos Diários: Aparecem todos os dias
+                    
                     return true; 
                 }
 
                 if (item.frequency === 'Semanal') {
-                    // Hábitos Semanais: Aparecem no dia da semana da data selecionada
-                    // se for igual ao dia da semana em que foram criados.
                     return item.dayOfWeekCreated === selectedDayOfWeek;
                 }
             }

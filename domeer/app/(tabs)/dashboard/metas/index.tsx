@@ -8,10 +8,13 @@ import { ItemDiario, useMetas } from '@/hooks/MetasContext';
 const arranhadorImagem: ImageSourcePropType = require('../../../../assets/images/arranhador.png');
 const gatosobe: ImageSourcePropType = require ('../../../../assets/images/Gatosobe.png');
 const gatosobindo: ImageSourcePropType = require ('../../../../assets/images/Gatosobindo.png');
-const premio: ImageSourcePropType = require ('../../../../assets/images/Premio.png')
+const premio: ImageSourcePropType = require ('../../../../assets/images/gatorecompensa.png')
+
+
+
 
 interface ItemMetaProps {
-  item: ItemDiario;
+  item: ItemDiario
 }
 
 const ItemMeta: React.FC<ItemMetaProps> = ({ item }) => {
