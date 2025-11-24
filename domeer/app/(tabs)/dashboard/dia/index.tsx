@@ -293,7 +293,6 @@ export default function Dia() {
             );
             return;
         }
-        // Por hora, mantemos a funcionalidade simples de toggle:
         atualizarItemDiario(item.id, { completed: !item.completed });
     };
 
@@ -915,8 +914,6 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
     },
-
-    // Novos estilos para duração de metas
     durationContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',

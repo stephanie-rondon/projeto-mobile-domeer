@@ -35,7 +35,6 @@ const gerarCalendario = (ano: number): Mes[] => {
 		'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
 		'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 	];
-	//copsetext
 	for (let m = 0; m < 12; m++) {
 		const dias: Dia[] = [];
 		const date = new Date(ano, m, 1);
@@ -64,7 +63,6 @@ interface RenderizarMesProps {
 	item: Mes;
 	datasImportantes: Compromisso[];
 	lidarComCliqueNoDia: (dia: Dia) => void;
-	// Novas props para controle do carrossel
 	indexMes: number;
 	refCarrossel: React.RefObject<any>;
 }
@@ -89,7 +87,6 @@ const renderizarMes = ({ item, datasImportantes, lidarComCliqueNoDia, indexMes, 
 
 	return (
 		<View style={styles.containerMes}>
-			{/* Título do mês com as setas de navegação */}
 			<View style={styles.containerTituloMesNavegavel}>
 				<TouchableOpacity onPress={() => mudarMes('anterior')} style={styles.botaoNavegacao}>
 					<Text style={[styles.setaNavegacao, styles.copseText]}>{'<'}</Text>
@@ -144,7 +141,7 @@ export default function TelaMes() {
 	const [proximoIdCompromisso, setProximoIdCompromisso] = useState(0);
 	
 	const [mesAtivoI, setMesAtivoI] = useState(indiceMesInicial);
-	const refCarrossel = useRef<any>(null); // Ref para controlar o carrossel
+	const refCarrossel = useRef<any>(null);
 
 	const [modalExclusaoVisivel, setModalExclusaoVisivel] = useState(false);
 	const [compromissoParaExcluir, setCompromissoParaExcluir] = useState<Compromisso | null>(null);
@@ -306,18 +303,18 @@ export default function TelaMes() {
 				<View style={styles.quadradoBranco}>
 					<Carousel
 						loop={false}
-						ref={refCarrossel} // Referência adicionada aqui
+						ref={refCarrossel} 
 						data={meses}
 						width={larguraCarrossel}
-						height={310} // Aumentei um pouco a altura para acomodar o título e manter a proporção
+						height={310}
 						defaultIndex={indiceMesInicial}
 						onSnapToItem={setMesAtivoI} 
 						renderItem={({ item, index }) => renderizarMes({ 
 							item, 
 							datasImportantes: datasImportantes, 
 							lidarComCliqueNoDia,
-							indexMes: index, // Passamos o índice atual
-							refCarrossel: refCarrossel, // Passamos a referência
+							indexMes: index,
+							refCarrossel: refCarrossel, 
 						})}
 					/>
 				</View>
@@ -438,7 +435,7 @@ const styles = StyleSheet.create({
 	},
 	quadradoBranco: {
 		width: '98%',
-		height: 350, // Ajustado para a nova altura do carrossel
+		height: 350, 
 		backgroundColor: '#FFFEE5',
 		borderRadius: 15,
 		marginTop: -1,

@@ -2,8 +2,11 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Formik } from 'formik';
-import { Pressable, StyleSheet, Text, TextInput } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, Image } from "react-native";
 import * as Yup from 'yup';
+
+
+const gato = require ('@/assets/images/Gato-espiando.png');
 
 type RootStackParamList = {
     Usuario: { nomeUsuario: string }; 
@@ -52,6 +55,10 @@ export default function LoginScreen() {
           colors={['#5e2bff', '#fc6dab']}
           style={styles.container}
         >
+          <Image
+					source={gato}
+					style={styles.gato}
+				/>
       <Text style={styles.title}>Vamos fazer o login?</Text>
 
       <Formik
@@ -88,12 +95,20 @@ const styles= StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
+    position: 'relative',
   },
   title: {
     fontSize: 22,
     color: "#fff",
     marginBottom: 20,
     fontWeight: "bold",
+  },
+  gato:{
+    height: 200,
+    width: 200,
+    position: 'absolute',
+    bottom: 0,
+
   },
   input: {
     backgroundColor: "#fff",
