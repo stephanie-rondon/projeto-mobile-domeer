@@ -2,16 +2,17 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Formik } from 'formik';
-import { Pressable, StyleSheet, Text, TextInput, Image } from "react-native";
+import { Image, Pressable, StyleSheet, Text, TextInput } from "react-native";
 import * as Yup from 'yup';
 
-
-const gato = require ('@/assets/images/Gato-espiando.png');
-
 type RootStackParamList = {
-    Usuario: { nomeUsuario: string }; 
-    Login: undefined; 
+  Home: { nomeUsuario: string };
+  Login: undefined;
+  Mes: undefined;
+  Metas: undefined;
 };
+
+const gato = require('@/assets/images/Gato-espiando.png');
 
 //validação com Yup
 const validationSchema = Yup.object().shape({
@@ -19,7 +20,7 @@ const validationSchema = Yup.object().shape({
     .required('O nome de usuário é obrigatório'),
   password: Yup.string()
     .required('A senha é obrigatória')
-});
+}); //perfeito
 
 type LoginFormValues = {
   name: string;
@@ -29,58 +30,66 @@ type LoginFormValues = {
 export default function LoginScreen() {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  const handleLogin = async (values: LoginFormValues) =>{
-    const SERVER_URL = 'http://localhost:3001'; 
-    
-    try {
-        const res = await fetch(`${SERVER_URL}/users?username=${values.name}&password=${values.password}`);
-        const users = await res.json();
-        
-        if (users.length > 0) {
-            const user = users[0];
-            alert(`Bem-vindo, ${user.username}!`);
-            
-            navigation.navigate('Usuario', { nomeUsuario: user.username }); 
-        } else {
-            alert('Nome de usuário ou senha incorretos.');
+  const handleLogin = async (values: LoginFormValues) => {
+    const servidor = 'http://localhost:3000';
+
+    fetch(`${servidor}/users`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Status HTTP: ${response.status}`);
         }
-    } catch (error) {
+        return response.json();
+      })
+      .then((users: any[]) => {
+        const user = users.find(
+          (u) => u.username === values.name && u.password === values.password
+        );
+
+        if (user) {
+          alert(`Login bem-sucedido!`);
+
+          navigation.navigate('Home', { nomeUsuario: user.username }); //
+        } else {
+          alert("Nome de usuário ou senha incorretos.");
+        }
+      })
+      .catch((error) => {
         console.error('Erro de comunicação:', error);
-        alert('Erro de conexão com o servidor. Verifique se o JSON Server está ativo em localhost:3001.');
-    }
-  };
+        alert(`FALHA NA CONEXÃO. Verifique se o JSON Server está ativo em ${servidor}.`);
+      })
+  };
 
   return (
     <LinearGradient
-          colors={['#5e2bff', '#fc6dab']}
-          style={styles.container}
-        >
-          <Image
-					source={gato}
-					style={styles.gato}
-				/>
+      colors={['#5e2bff', '#fc6dab']}
+      style={styles.container}
+    >
+      <Image
+        source={gato}
+        style={styles.gato}
+      />
       <Text style={styles.title}>Vamos fazer o login?</Text>
 
       <Formik
-        initialValues={{name: '', password: ''}}
-        validationSchema={validationSchema}
+        initialValues={{ name: '', password: '' }}
+        validationSchema={validationSchema} //chamando o yup
         onSubmit={handleLogin}
       >
-        {({ handleChange, handleBlur, handleSubmit, values, errors, touched}) => (
+        {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
           <>
-          <TextInput style={styles.input} placeholder="Nome do usuário" onChangeText={handleChange('name')} onBlur={handleBlur('name')} value={values.name}/>
-          {touched.name && errors.name &&(
-            <Text style={styles.textoErro}>{errors.name}</Text>
-          )}
+            <TextInput style={styles.input} placeholder="Nome do usuário" onChangeText={handleChange('name')} onBlur={handleBlur('name')} value={values.name} />
+            {touched.name && errors.name && (
+              <Text style={styles.textoErro}>{errors.name}</Text>
+            )}
 
-          <TextInput style={styles.input} placeholder="Senha" onChangeText={handleChange('password')} onBlur={handleBlur('password')} value={values.password} secureTextEntry/>
-          {touched.password && errors.password &&(
-            <Text style={styles.textoErro}>{errors.password}</Text>
-          )}
+            <TextInput style={styles.input} placeholder="Senha" onChangeText={handleChange('password')} onBlur={handleBlur('password')} value={values.password} secureTextEntry />
+            {touched.password && errors.password && (
+              <Text style={styles.textoErro}>{errors.password}</Text>
+            )}
 
-          <Pressable style={styles.button} onPress={() => handleSubmit()}>
-           <Text style={styles.buttonText}>Login</Text>
-          </Pressable>
+            <Pressable style={styles.button} onPress={() => handleSubmit()}>
+              <Text style={styles.buttonText}>Login</Text>
+            </Pressable>
           </>
         )}
       </Formik>
@@ -88,7 +97,7 @@ export default function LoginScreen() {
   );
 }
 
-const styles= StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#145",
@@ -103,7 +112,7 @@ const styles= StyleSheet.create({
     marginBottom: 20,
     fontWeight: "bold",
   },
-  gato:{
+  gato: {
     height: 200,
     width: 200,
     position: 'absolute',
@@ -112,11 +121,11 @@ const styles= StyleSheet.create({
   },
   input: {
     backgroundColor: "#fff",
-    width: 200, 
+    width: 200,
     height: 40,
     marginBottom: 10,
     padding: 10,
-    borderRadius: 10, 
+    borderRadius: 10,
   },
   button: {
     backgroundColor: "#fff",
