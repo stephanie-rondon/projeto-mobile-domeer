@@ -3,11 +3,10 @@ import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 
-import SignUpScreen from "../app/(tabs)/cadastro/SignUpScreen";
-import LoginScreen from "../app/(tabs)/login/LoginScreen";
 import HomeScreen from "../app/(tabs)/dashboard/index";
 import MesScreen from "../app/(tabs)/dashboard/mes/index";
 import UserScreen from "../app/(tabs)/dashboard/usuario/index";
+import LoginScreen from "../app/(tabs)/login/LoginScreen";
 
 const Stack = createStackNavigator();
 
@@ -16,7 +15,6 @@ const AppStack = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Signup" component={SignUpScreen} />
         <Stack.Screen name="User" component={UserScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Mes" component={MesScreen} />
